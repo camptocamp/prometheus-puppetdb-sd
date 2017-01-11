@@ -71,14 +71,16 @@ func getNodes(client *http.Client) (nodes []Node, err error) {
 }
 
 func writeNodes(nodes []Node) (err error) {
-	targets := Targets{}
+	allTargets := []Targets{}
 
 	for _, node := range nodes {
+		targets := Targets{}
 		target := fmt.Sprintf("%s:%s", node.Ipaddress, port)
 		targets.Targets = append(targets.Targets, target)
+		allTargets = append(allTargets, targets)
 	}
 
-	d, err := yaml.Marshal(&targets)
+	d, err := yaml.Marshal(&allTargets)
 
 	err = ioutil.WriteFile(file, d, 0644)
 	return nil
