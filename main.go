@@ -23,7 +23,7 @@ type Targets struct {
 const (
 	query = "facts { name='ipaddress' and nodes { facts { name='collectd_version' and value ~ '^5\\\\.[567]' } and resources { type='Class' and title='Collectd' } } }"
 	port  = "1234"
-	file  = "/tmp/prometheus-targets.yml"
+	file  = "/etc/prometheus-targets.yml"
 	sleep = 5 * time.Second
 )
 
