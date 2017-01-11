@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -63,8 +64,13 @@ func getNodes(client *http.Client) (nodes []Node, err error) {
 }
 
 func writeNodes(nodes []Node) error {
+	var buffer bytes.Buffer
+
+	buffer.WriteString(" - targets:\n")
 	for _, node := range nodes {
-		fmt.Printf("%s => %s\n", node.Certname, node.Ipaddress)
+		buffer.WriteString(fmt.Sprintf("   - %s\n", node.Ipaddress))
 	}
+
+	fmt.Println(buffer.String())
 	return nil
 }
