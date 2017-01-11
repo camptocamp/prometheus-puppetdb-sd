@@ -29,8 +29,10 @@ func main() {
 			break
 		}
 
-		for _, node := range nodes {
-			fmt.Printf("%s => %s\n", node.Certname, node.Ipaddress)
+		err = writeNodes(nodes)
+		if err != nil {
+			fmt.Println(err)
+			break
 		}
 
 		fmt.Printf("Sleeping for %v", sleep)
@@ -58,4 +60,11 @@ func getNodes(client *http.Client) (nodes []Node, err error) {
 
 	err = json.Unmarshal(body, &nodes)
 	return
+}
+
+func writeNodes(nodes []Node) error {
+	for _, node := range nodes {
+		fmt.Printf("%s => %s\n", node.Certname, node.Ipaddress)
+	}
+	return nil
 }
