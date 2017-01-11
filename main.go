@@ -15,7 +15,7 @@ type Node struct {
 }
 
 const (
-	query = "facts{name='ipaddress' and nodes{resources{type='Class' and title='Collectd'}}}"
+	query = "facts { name='ipaddress' and nodes { facts { name='collectd_version' and value ~ '^5\\\\.[567]' } and resources { type='Class' and title='Collectd' } } }"
 	sleep = 5 * time.Second
 )
 
