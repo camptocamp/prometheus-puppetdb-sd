@@ -23,28 +23,7 @@ func main() {
 	client := &http.Client{}
 
 	for {
-		form := strings.NewReader(fmt.Sprintf("{\"query\":\"%s\"}", query))
-		req, err := http.NewRequest("POST", "http://localhost:8080/pdb/query/v4", form)
-		if err != nil {
-			fmt.Println(err)
-			break
-		}
-		req.Header.Add("Content-Type", "application/json")
-
-		resp, err := client.Do(req)
-		if err != nil {
-			fmt.Println(err)
-			break
-		}
-
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			fmt.Println(err)
-			break
-		}
-
-		nodes := make([]Node, 0)
-		err = json.Unmarshal(body, &nodes)
+		nodes, err := getNodes(client)
 		if err != nil {
 			fmt.Println(err)
 			break
@@ -57,4 +36,26 @@ func main() {
 		fmt.Printf("Sleeping for %v", sleep)
 		time.Sleep(sleep)
 	}
+}
+
+func getNodes(client *http.Client) (nodes []Node, err error) {
+	form := strings.NewReader(fmt.Sprintf("{\"query\":\"%s\"}", query))
+	req, err := http.NewRequest("POST", "http://localhost:8080/pdb/query/v4", form)
+	if err != nil {
+		return
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(body, &nodes)
+	return
 }
