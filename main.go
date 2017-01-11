@@ -17,6 +17,7 @@ type Node struct {
 
 const (
 	query = "facts { name='ipaddress' and nodes { facts { name='collectd_version' and value ~ '^5\\\\.[567]' } and resources { type='Class' and title='Collectd' } } }"
+	port  = "1234"
 	sleep = 5 * time.Second
 )
 
@@ -68,7 +69,7 @@ func writeNodes(nodes []Node) error {
 
 	buffer.WriteString(" - targets:\n")
 	for _, node := range nodes {
-		buffer.WriteString(fmt.Sprintf("   - %s\n", node.Ipaddress))
+		buffer.WriteString(fmt.Sprintf("   - %s:%s\n", node.Ipaddress, port))
 	}
 
 	fmt.Println(buffer.String())
