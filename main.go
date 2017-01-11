@@ -50,7 +50,7 @@ func main() {
 
 func getNodes(client *http.Client) (nodes []Node, err error) {
 	form := strings.NewReader(fmt.Sprintf("{\"query\":\"%s\"}", query))
-	req, err := http.NewRequest("POST", "http://localhost:8080/pdb/query/v4", form)
+	req, err := http.NewRequest("POST", "http://puppetdb:8080/pdb/query/v4", form)
 	if err != nil {
 		return
 	}
