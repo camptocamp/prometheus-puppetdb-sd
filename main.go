@@ -1,18 +1,23 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
+
+	"gopkg.in/yaml.v2"
 )
 
 type Node struct {
 	Certname  string `json:"certname"`
 	Ipaddress string `json:"value"`
+}
+
+type Targets struct {
+	Targets []string `yaml:"targets"`
 }
 
 const (
@@ -66,14 +71,15 @@ func getNodes(client *http.Client) (nodes []Node, err error) {
 }
 
 func writeNodes(nodes []Node) (err error) {
-	var buffer bytes.Buffer
+	targets := Targets{}
 
-	buffer.WriteString(" - targets:\n")
 	for _, node := range nodes {
-		buffer.WriteString(fmt.Sprintf("   - %s:%s\n", node.Ipaddress, port))
+		target := fmt.Sprintf("%s:%s", node.Ipaddress, port)
+		targets.Targets = append(targets.Targets, target)
 	}
 
-	fmt.Printf("Writing %v targets to file %s\n", len(nodes), file)
-	err = ioutil.WriteFile(file, buffer.Bytes(), 0644)
+	d, err := yaml.Marshal(&targets)
+
+	err = ioutil.WriteFile(file, d, 0644)
 	return nil
 }
