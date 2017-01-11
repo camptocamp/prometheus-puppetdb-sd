@@ -25,9 +25,12 @@ const (
 	query = "facts { name='ipaddress' and nodes { facts { name='collectd_version' and value ~ '^5\\\\.7' } and resources { type='Class' and title='Collectd' } } }"
 	port  = "9103"
 	file  = "/etc/prometheus-config/prometheus-targets.yml"
-	job   = "puppetdb"
 	sleep = 5 * time.Second
 )
+
+var labels = map[string]string{
+	"job": "puppet",
+}
 
 func main() {
 	client := &http.Client{}
@@ -79,8 +82,8 @@ func writeNodes(nodes []Node) (err error) {
 		targets := Targets{}
 		target := fmt.Sprintf("%s:%s", node.Ipaddress, port)
 		targets.Targets = append(targets.Targets, target)
-		targets.Labels = make(map[string]string)
-		targets.Labels["job"] = job
+		targets.Labels = labels
+		targets.Labels["certname"] = node.Certname
 		allTargets = append(allTargets, targets)
 	}
 
