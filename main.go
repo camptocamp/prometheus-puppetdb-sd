@@ -18,6 +18,7 @@ type Node struct {
 const (
 	query = "facts { name='ipaddress' and nodes { facts { name='collectd_version' and value ~ '^5\\\\.[567]' } and resources { type='Class' and title='Collectd' } } }"
 	port  = "1234"
+	file  = "/tmp/prometheus-targets.yml"
 	sleep = 5 * time.Second
 )
 
@@ -37,7 +38,7 @@ func main() {
 			break
 		}
 
-		fmt.Printf("Sleeping for %v", sleep)
+		fmt.Printf("Sleeping for %v\n", sleep)
 		time.Sleep(sleep)
 	}
 }
@@ -64,7 +65,7 @@ func getNodes(client *http.Client) (nodes []Node, err error) {
 	return
 }
 
-func writeNodes(nodes []Node) error {
+func writeNodes(nodes []Node) (err error) {
 	var buffer bytes.Buffer
 
 	buffer.WriteString(" - targets:\n")
@@ -72,6 +73,7 @@ func writeNodes(nodes []Node) error {
 		buffer.WriteString(fmt.Sprintf("   - %s:%s\n", node.Ipaddress, port))
 	}
 
-	fmt.Println(buffer.String())
+	fmt.Printf("Writing %v targets to file %s\n", len(nodes), file)
+	err = ioutil.WriteFile(file, buffer.Bytes(), 0644)
 	return nil
 }
