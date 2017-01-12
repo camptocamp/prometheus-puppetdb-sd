@@ -1,0 +1,31 @@
+.TH prometheus-puppetdb 1 "12 January 2017"
+.SH NAME
+prometheus-puppetdb \- Prometheus scrape lists based on PuppetDB
+.SH SYNOPSIS
+\fBprometheus-puppetdb\fP [OPTIONS]
+.SH DESCRIPTION
+
+.SH OPTIONS
+.SS Application Options
+.TP
+\fB\fB\-V\fR, \fB\-\-version\fR\fP
+Display version.
+.TP
+\fB\fB\-q\fR, \fB\-\-puppetdb-query\fR <default: \fI"facts { name='ipaddress' and nodes { deactivated is null and facts { name='collectd_version' and value ~ '^5\\\\\\\\.7' } and resources { type='Class' and title='Collectd' } } }"\fR>\fP
+PuppetDB query.
+.TP
+\fB\fB\-p\fR, \fB\-\-collectd-port\fR <default: \fI"9103"\fR>\fP
+Collectd port.
+.TP
+\fB\fB\-c\fR, \fB\-\-config-file\fR <default: \fI"/etc/prometheus-config/prometheus-targets.yml"\fR>\fP
+Prometheus target file.
+.TP
+\fB\fB\-s\fR, \fB\-\-sleep\fR <default: \fI"5s"\fR>\fP
+Sleep time between queries.
+.TP
+\fB\fB\-m\fR, \fB\-\-manpage\fR\fP
+Output manpage.
+.SS Help Options
+.TP
+\fB\fB\-h\fR, \fB\-\-help\fR\fP
+Show this help message
