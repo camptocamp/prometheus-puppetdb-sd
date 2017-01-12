@@ -11,6 +11,9 @@ prometheus-puppetdb \- Prometheus scrape lists based on PuppetDB
 \fB\fB\-V\fR, \fB\-\-version\fR\fP
 Display version.
 .TP
+\fB\fB\-u\fR, \fB\-\-puppetdb-url\fR <default: \fI"http://puppetdb:8080"\fR>\fP
+PuppetDB base URL.
+.TP
 \fB\fB\-q\fR, \fB\-\-puppetdb-query\fR <default: \fI"facts { name='ipaddress' and nodes { deactivated is null and facts { name='collectd_version' and value ~ '^5\\\\\\\\.7' } and resources { type='Class' and title='Collectd' } } }"\fR>\fP
 PuppetDB query.
 .TP
