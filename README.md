@@ -26,10 +26,10 @@ Usage:
 Application Options:
   -V, --version         Display version.
   -q, --puppetdb-query= PuppetDB query. (default: facts { name='ipaddress' and nodes { deactivated is null and facts { name='collectd_version' and value ~ '^5\\.7' } and resources {
-                        type='Class' and title='Collectd' } } })
-  -p, --collectd-port=  Collectd port. (default: 9103)
-  -c, --config-file=    Prometheus target file. (default: /etc/prometheus-config/prometheus-targets.yml)
-  -s, --sleep=          Sleep time between queries. (default: 5s)
+                        type='Class' and title='Collectd' } } }) [$PROMETHEUS_PUPPETDB_QUERY]
+  -p, --collectd-port=  Collectd port. (default: 9103) [$PROMETHEUS_PUPPETDB_COLLECTD_PORT]
+  -c, --config-file=    Prometheus target file. (default: /etc/prometheus-config/prometheus-targets.yml) [$PROMETHEUS_PUPPETDB_FILE]
+  -s, --sleep=          Sleep time between queries. (default: 5s) [$PROMETHEUS_PUPPETDB_SLEEP]
   -m, --manpage         Output manpage.
 
 Help Options:
