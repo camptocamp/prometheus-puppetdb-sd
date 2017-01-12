@@ -38,7 +38,7 @@ type Targets struct {
 }
 
 var labels = map[string]string{
-	"job": "puppet",
+	"job": "collectd",
 }
 
 func main() {
