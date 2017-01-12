@@ -18,12 +18,13 @@ import (
 var version = "undefined"
 
 type Config struct {
-	Version bool   `short:"V" long:"version" description:"Display version."`
-	Query   string `short:"q" long:"puppetdb-query" description:"PuppetDB query." env:"PROMETHEUS_PUPPETDB_QUERY" default:"facts { name='ipaddress' and nodes { deactivated is null and facts { name='collectd_version' and value ~ '^5\\\\.7' } and resources { type='Class' and title='Collectd' } } }"`
-	Port    int    `short:"p" long:"collectd-port" description:"Collectd port." env:"PROMETHEUS_PUPPETDB_COLLECTD_PORT" default:"9103"`
-	File    string `short:"c" long:"config-file" description:"Prometheus target file." env:"PROMETHEUS_PUPPETDB_FILE" default:"/etc/prometheus-config/prometheus-targets.yml"`
-	Sleep   string `short:"s" long:"sleep" description:"Sleep time between queries." env:"PROMETHEUS_PUPPETDB_SLEEP" default:"5s"`
-	Manpage bool   `short:"m" long:"manpage" description:"Output manpage."`
+	Version     bool   `short:"V" long:"version" description:"Display version."`
+	PuppetDBURL string `short:"u" long:"puppetdb-url" description:"PuppetDB base URL." env:"PROMETHEUS_PUPPETDB_URL" default:"http://puppetdb:8080"`
+	Query       string `short:"q" long:"puppetdb-query" description:"PuppetDB query." env:"PROMETHEUS_PUPPETDB_QUERY" default:"facts { name='ipaddress' and nodes { deactivated is null and facts { name='collectd_version' and value ~ '^5\\\\.7' } and resources { type='Class' and title='Collectd' } } }"`
+	Port        int    `short:"p" long:"collectd-port" description:"Collectd port." env:"PROMETHEUS_PUPPETDB_COLLECTD_PORT" default:"9103"`
+	File        string `short:"c" long:"config-file" description:"Prometheus target file." env:"PROMETHEUS_PUPPETDB_FILE" default:"/etc/prometheus-config/prometheus-targets.yml"`
+	Sleep       string `short:"s" long:"sleep" description:"Sleep time between queries." env:"PROMETHEUS_PUPPETDB_SLEEP" default:"5s"`
+	Manpage     bool   `short:"m" long:"manpage" description:"Output manpage."`
 }
 
 type Node struct {
@@ -50,7 +51,7 @@ func main() {
 	client := &http.Client{}
 
 	for {
-		nodes, err := getNodes(client, cfg.Query)
+		nodes, err := getNodes(client, cfg.PuppetDBURL, cfg.Query)
 		if err != nil {
 			fmt.Println(err)
 			break
@@ -95,9 +96,10 @@ func loadConfig(version string) (c Config, err error) {
 	return
 }
 
-func getNodes(client *http.Client, query string) (nodes []Node, err error) {
+func getNodes(client *http.Client, puppetdb string, query string) (nodes []Node, err error) {
 	form := strings.NewReader(fmt.Sprintf("{\"query\":\"%s\"}", query))
-	req, err := http.NewRequest("POST", "http://puppetdb:8080/pdb/query/v4", form)
+	puppetdbURL := fmt.Sprintf("%s/pdb/query/v4", puppetdb)
+	req, err := http.NewRequest("POST", puppetdbURL, form)
 	if err != nil {
 		return
 	}
