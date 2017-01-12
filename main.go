@@ -5,11 +5,21 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
+	"github.com/jessevdk/go-flags"
+
 	"gopkg.in/yaml.v2"
 )
+
+type Config struct {
+	Query string `short:"q" long:"puppetdb-query" description:"PuppetDB query." default:"facts { name='ipaddress' and nodes { deactivated is null and facts { name='collectd_version' and value ~ '^5\\\\.7' } and resources { type='Class' and title='Collectd' } } }"`
+	Port  int    `short:"p" long:"collectd-port" description:"Collectd port." default:"9103"`
+	File  string `short:"c" long:"config-file" description:"Prometheus target file." default:"/etc/prometheus-config/prometheus-targets.yml"`
+	Sleep string `short:"s" long:"sleep" description:"Sleep time between queries." default:"5s"`
+}
 
 type Node struct {
 	Certname  string `json:"certname"`
@@ -21,39 +31,49 @@ type Targets struct {
 	Labels  map[string]string `yaml:"labels"`
 }
 
-const (
-	query = "facts { name='ipaddress' and nodes { deactivated is null and facts { name='collectd_version' and value ~ '^5\\\\.7' } and resources { type='Class' and title='Collectd' } } }"
-	port  = "9103"
-	file  = "/etc/prometheus-config/prometheus-targets.yml"
-	sleep = 5 * time.Second
-)
-
 var labels = map[string]string{
 	"job": "puppet",
 }
 
 func main() {
+	cfg, err := loadConfig()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
 	client := &http.Client{}
 
 	for {
-		nodes, err := getNodes(client)
+		nodes, err := getNodes(client, cfg.Query)
 		if err != nil {
 			fmt.Println(err)
 			break
 		}
 
-		err = writeNodes(nodes)
+		err = writeNodes(nodes, cfg.Port, cfg.File)
 		if err != nil {
 			fmt.Println(err)
 			break
 		}
 
+		sleep, err := time.ParseDuration(cfg.Sleep)
+		if err != nil {
+			fmt.Println(err)
+			break
+		}
 		fmt.Printf("Sleeping for %v\n", sleep)
 		time.Sleep(sleep)
 	}
 }
 
-func getNodes(client *http.Client) (nodes []Node, err error) {
+func loadConfig() (c Config, err error) {
+	parser := flags.NewParser(&c, flags.Default)
+	_, err = parser.Parse()
+	return
+}
+
+func getNodes(client *http.Client, query string) (nodes []Node, err error) {
 	form := strings.NewReader(fmt.Sprintf("{\"query\":\"%s\"}", query))
 	req, err := http.NewRequest("POST", "http://puppetdb:8080/pdb/query/v4", form)
 	if err != nil {
@@ -75,12 +95,12 @@ func getNodes(client *http.Client) (nodes []Node, err error) {
 	return
 }
 
-func writeNodes(nodes []Node) (err error) {
+func writeNodes(nodes []Node, port int, file string) (err error) {
 	allTargets := []Targets{}
 
 	for _, node := range nodes {
 		targets := Targets{}
-		target := fmt.Sprintf("%s:%s", node.Ipaddress, port)
+		target := fmt.Sprintf("%s:%v", node.Ipaddress, port)
 		targets.Targets = append(targets.Targets, target)
 		targets.Labels = labels
 		targets.Labels["certname"] = node.Certname
