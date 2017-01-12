@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -14,11 +15,15 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+var version = "undefined"
+
 type Config struct {
-	Query string `short:"q" long:"puppetdb-query" description:"PuppetDB query." default:"facts { name='ipaddress' and nodes { deactivated is null and facts { name='collectd_version' and value ~ '^5\\\\.7' } and resources { type='Class' and title='Collectd' } } }"`
-	Port  int    `short:"p" long:"collectd-port" description:"Collectd port." default:"9103"`
-	File  string `short:"c" long:"config-file" description:"Prometheus target file." default:"/etc/prometheus-config/prometheus-targets.yml"`
-	Sleep string `short:"s" long:"sleep" description:"Sleep time between queries." default:"5s"`
+	Version bool   `short:"V" long:"version" description:"Display version."`
+	Query   string `short:"q" long:"puppetdb-query" description:"PuppetDB query." default:"facts { name='ipaddress' and nodes { deactivated is null and facts { name='collectd_version' and value ~ '^5\\\\.7' } and resources { type='Class' and title='Collectd' } } }"`
+	Port    int    `short:"p" long:"collectd-port" description:"Collectd port." default:"9103"`
+	File    string `short:"c" long:"config-file" description:"Prometheus target file." default:"/etc/prometheus-config/prometheus-targets.yml"`
+	Sleep   string `short:"s" long:"sleep" description:"Sleep time between queries." default:"5s"`
+	Manpage bool   `short:"m" long:"manpage" description:"Output manpage."`
 }
 
 type Node struct {
@@ -36,7 +41,7 @@ var labels = map[string]string{
 }
 
 func main() {
-	cfg, err := loadConfig()
+	cfg, err := loadConfig(version)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -67,9 +72,26 @@ func main() {
 	}
 }
 
-func loadConfig() (c Config, err error) {
+func loadConfig(version string) (c Config, err error) {
 	parser := flags.NewParser(&c, flags.Default)
 	_, err = parser.Parse()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	if c.Version {
+		fmt.Printf("Prometheus-puppetdb v%v\n", version)
+		os.Exit(0)
+	}
+
+	if c.Manpage {
+		var buf bytes.Buffer
+		parser.ShortDescription = "Prometheus scrape lists based on PuppetDB"
+		parser.WriteManPage(&buf)
+		fmt.Printf(buf.String())
+		os.Exit(0)
+	}
 	return
 }
 
