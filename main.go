@@ -37,10 +37,6 @@ type Targets struct {
 	Labels  map[string]string `yaml:"labels"`
 }
 
-var labels = map[string]string{
-	"job": "collectd",
-}
-
 func main() {
 	cfg, err := loadConfig(version)
 	if err != nil {
@@ -123,11 +119,13 @@ func writeNodes(nodes []Node, port int, file string) (err error) {
 	allTargets := []Targets{}
 
 	for _, node := range nodes {
-		targets := Targets{}
-		target := fmt.Sprintf("%s:%v", node.Ipaddress, port)
+		var targets = Targets{}
+		var target = fmt.Sprintf("%s:%v", node.Ipaddress, port)
 		targets.Targets = append(targets.Targets, target)
-		targets.Labels = labels
-		targets.Labels["certname"] = node.Certname
+		targets.Labels = map[string]string{
+			"job":      "collectd",
+			"certname": node.Certname,
+		}
 		allTargets = append(allTargets, targets)
 	}
 
