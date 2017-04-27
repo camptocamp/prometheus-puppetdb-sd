@@ -20,16 +20,16 @@ var version = "undefined"
 type Config struct {
 	Version     bool   `short:"V" long:"version" description:"Display version."`
 	PuppetDBURL string `short:"u" long:"puppetdb-url" description:"PuppetDB base URL." env:"PROMETHEUS_PUPPETDB_URL" default:"http://puppetdb:8080"`
-	Query       string `short:"q" long:"puppetdb-query" description:"PuppetDB query." env:"PROMETHEUS_PUPPETDB_QUERY" default:"facts { name='ipaddress' and nodes { deactivated is null and ! (facts { name = 'osfamily' and value = 'RedHat' } and facts { name='operatingsystemmajrelease' and value = '5' }) and facts { name='collectd_version' and value ~ '^5\\\\.7' } and resources { type='Class' and title='Collectd' } } }"`
+	Query       string `short:"q" long:"puppetdb-query" description:"PuppetDB query." env:"PROMETHEUS_PUPPETDB_QUERY" default:"inventory[certname, facts] { nodes { deactivated is null } }"`
 	Port        int    `short:"p" long:"collectd-port" description:"Collectd port." env:"PROMETHEUS_PUPPETDB_COLLECTD_PORT" default:"9103"`
 	File        string `short:"c" long:"config-file" description:"Prometheus target file." env:"PROMETHEUS_PUPPETDB_FILE" default:"/etc/prometheus-targets/prometheus-targets.yml"`
-	Sleep       string `short:"s" long:"sleep" description:"Sleep time between queries." env:"PROMETHEUS_PUPPETDB_SLEEP" default:"5s"`
+	Sleep       string `short:"s" long:"sleep" description:"Sleep time between queries." env:"PROMETHEUS_PUPPETDB_SLEEP" default:"15s"`
 	Manpage     bool   `short:"m" long:"manpage" description:"Output manpage."`
 }
 
 type Node struct {
-	Certname  string `json:"certname"`
-	Ipaddress string `json:"value"`
+	Certname string                 `json:"certname"`
+	Facts    map[string]interface{} `json:"facts"`
 }
 
 type Targets struct {
@@ -119,8 +119,14 @@ func writeNodes(nodes []Node, port int, file string) (err error) {
 	allTargets := []Targets{}
 
 	for _, node := range nodes {
+		if o, ok := node.Facts["prometheus_target_conf"]; ok {
+			overrides := o.(map[string]interface{})
+			if overrides["enable"] == false {
+				break
+			}
+		}
 		var targets = Targets{}
-		var target = fmt.Sprintf("%s:%v", node.Ipaddress, port)
+		var target = fmt.Sprintf("%s:%v", node.Facts["ipaddress"], port)
 		targets.Targets = append(targets.Targets, target)
 		targets.Labels = map[string]string{
 			"job":      "collectd",
