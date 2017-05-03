@@ -32,6 +32,11 @@ type Node struct {
 	Ipaddress string `json:"value"`
 }
 
+type Override struct {
+	Certname string                 `json:"certname"`
+	Override map[string]interface{} `json:"value"`
+}
+
 type Targets struct {
 	Targets []string          `yaml:"targets"`
 	Labels  map[string]string `yaml:"labels"`
@@ -53,7 +58,13 @@ func main() {
 			break
 		}
 
-		err = writeNodes(nodes, cfg.Port, cfg.File)
+		overrides, err := getOverrides(client, cfg.PuppetDBURL)
+		if err != nil {
+			fmt.Println(err)
+			break
+		}
+
+		err = writeNodes(nodes, overrides, cfg.Port, cfg.File)
 		if err != nil {
 			fmt.Println(err)
 			break
@@ -115,12 +126,52 @@ func getNodes(client *http.Client, puppetdb string, query string) (nodes []Node,
 	return
 }
 
-func writeNodes(nodes []Node, port int, file string) (err error) {
+func getOverrides(client *http.Client, puppetdb string) (overrides map[string]map[string]interface{}, err error) {
+	form := strings.NewReader(fmt.Sprintf("{\"query\":\"%s\"}", "facts[certname, value] { name='prometheus_target_conf' }"))
+	puppetdbURL := fmt.Sprintf("%s/pdb/query/v4", puppetdb)
+	req, err := http.NewRequest("POST", puppetdbURL, form)
+	if err != nil {
+		return
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return
+	}
+
+	var nodes []Override
+	err = json.Unmarshal(body, &nodes)
+
+	overrides = make(map[string]map[string]interface{})
+	for _, node := range nodes {
+		overrides[node.Certname] = node.Override
+	}
+
+	return
+}
+
+func writeNodes(nodes []Node, overrides map[string]map[string]interface{}, port int, file string) (err error) {
 	allTargets := []Targets{}
 
 	for _, node := range nodes {
 		var targets = Targets{}
-		var target = fmt.Sprintf("%s:%v", node.Ipaddress, port)
+		var hostname = node.Ipaddress
+		var zeport = port
+		if o, ok := overrides[node.Certname]; ok {
+			if h, ok := o["hostname"]; ok {
+				hostname = h.(string)
+			}
+			if p, ok := o["port"]; ok {
+				zeport = int(p.(float64))
+			}
+		}
+		var target = fmt.Sprintf("%s:%v", hostname, zeport)
 		targets.Targets = append(targets.Targets, target)
 		targets.Labels = map[string]string{
 			"job":      "collectd",
