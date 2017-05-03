@@ -42,6 +42,21 @@ type Targets struct {
 	Labels  map[string]string `yaml:"labels"`
 }
 
+type FileSdConfig struct {
+	Files []string `yaml:"files"`
+}
+
+type ScrapeConfig struct {
+	JobName       string         `yaml:"job_name"`
+	MetricsPath   string         `yaml:"metrics_path"`
+	Scheme        string         `yaml:"scheme"`
+	FileSdConfigs []FileSdConfig `yaml:"file_sd_configs"`
+}
+
+type PrometheusConfig struct {
+	ScrapeConfigs []ScrapeConfig `yaml:"scrape_configs"`
+}
+
 func main() {
 	cfg, err := loadConfig(version)
 	if err != nil {
@@ -159,11 +174,33 @@ func getOverrides(client *http.Client, puppetdb string) (overrides map[string]ma
 func writeNodes(nodes []Node, overrides map[string]map[string]interface{}, port int, file string) (err error) {
 	allTargets := []Targets{}
 
+	prometheusConfig := PrometheusConfig{}
+
 	for _, node := range nodes {
 		var targets = Targets{}
 		var hostname = node.Ipaddress
 		var zeport = port
 		if o, ok := overrides[node.Certname]; ok {
+			scheme, okScheme := o["scheme"]
+			metricsPath, okMetricsPath := o["metrics_path"]
+			if okScheme || okMetricsPath {
+				var scrapeConfig = ScrapeConfig{}
+				scrapeConfig.JobName = node.Certname
+				if okScheme {
+					scrapeConfig.Scheme = scheme.(string)
+				} else {
+					scrapeConfig.Scheme = "http"
+				}
+				if okMetricsPath {
+					scrapeConfig.MetricsPath = metricsPath.(string)
+				} else {
+					scrapeConfig.MetricsPath = "/metrics"
+				}
+				scrapeConfig.FileSdConfigs = []FileSdConfig{
+					{Files: []string{fmt.Sprintf("/etc/prometheus-targets/%s/*-targets.yaml", node.Certname)}},
+				}
+				prometheusConfig.ScrapeConfigs = append(prometheusConfig.ScrapeConfigs, scrapeConfig)
+			}
 			if h, ok := o["hostname"]; ok {
 				hostname = h.(string)
 			}
@@ -179,6 +216,11 @@ func writeNodes(nodes []Node, overrides map[string]map[string]interface{}, port 
 		}
 		allTargets = append(allTargets, targets)
 	}
+	c, err := yaml.Marshal(&prometheusConfig)
+	if err != nil {
+		return
+	}
+	ioutil.WriteFile("config.yaml", c, 0644)
 
 	d, err := yaml.Marshal(&allTargets)
 
