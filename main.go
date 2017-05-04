@@ -177,6 +177,15 @@ func writeNodes(nodes []Node, overrides map[string]map[string]interface{}, port 
 
 	prometheusConfig := PrometheusConfig{}
 
+	prometheusConfig.ScrapeConfigs = append(
+		prometheusConfig.ScrapeConfigs,
+		ScrapeConfig{
+			JobName: "prometheus-puppetdb",
+			FileSdConfigs: []FileSdConfig{
+				{Files: []string{fmt.Sprintf("%s/targets/prometheus-puppetdb/*.yml", dir)}},
+			},
+		})
+
 	for _, node := range nodes {
 		var targets = Targets{}
 		var hostname = node.Ipaddress
