@@ -191,6 +191,12 @@ func writeNodes(nodes []Node, overrides map[string]map[string]interface{}, port 
 		var hostname = node.Ipaddress
 		var zeport = port
 		if o, ok := overrides[node.Certname]; ok {
+			if h, ok := o["hostname"]; ok {
+				hostname = h.(string)
+			}
+			if p, ok := o["port"]; ok {
+				zeport = int(p.(float64))
+			}
 			scheme, okScheme := o["scheme"]
 			metricsPath, okMetricsPath := o["metrics_path"]
 			if okScheme || okMetricsPath {
@@ -206,12 +212,6 @@ func writeNodes(nodes []Node, overrides map[string]map[string]interface{}, port 
 					{Files: []string{fmt.Sprintf("%s/targets/%s/*.yml", dir, node.Certname)}},
 				}
 				prometheusConfig.ScrapeConfigs = append(prometheusConfig.ScrapeConfigs, scrapeConfig)
-			}
-			if h, ok := o["hostname"]; ok {
-				hostname = h.(string)
-			}
-			if p, ok := o["port"]; ok {
-				zeport = int(p.(float64))
 			}
 		}
 		var target = fmt.Sprintf("%s:%v", hostname, zeport)
