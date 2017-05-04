@@ -22,7 +22,8 @@ type Config struct {
 	PuppetDBURL string `short:"u" long:"puppetdb-url" description:"PuppetDB base URL." env:"PROMETHEUS_PUPPETDB_URL" default:"http://puppetdb:8080"`
 	Query       string `short:"q" long:"puppetdb-query" description:"PuppetDB query." env:"PROMETHEUS_PUPPETDB_QUERY" default:"facts { name='ipaddress' and nodes { deactivated is null and ! (facts { name = 'osfamily' and value = 'RedHat' } and facts { name='operatingsystemmajrelease' and value = '5' }) and facts { name='collectd_version' and value ~ '^5\\\\.7' } and resources { type='Class' and title='Collectd' } } }"`
 	Port        int    `short:"p" long:"collectd-port" description:"Collectd port." env:"PROMETHEUS_PUPPETDB_COLLECTD_PORT" default:"9103"`
-	File        string `short:"c" long:"config-file" description:"Prometheus target file." env:"PROMETHEUS_PUPPETDB_FILE" default:"/etc/prometheus-targets/prometheus-targets.yml"`
+	ConfigDir   string `short:"c" long:"config-dir" description:"Prometheus config dir." env:"PROMETHEUS_CONFIG_DIR" default:"/etc/prometheus"`
+	File        string `short:"f" long:"config-file" description:"Prometheus target file." env:"PROMETHEUS_PUPPETDB_FILE" default:"/etc/prometheus/targets/default/targets.yml"`
 	Sleep       string `short:"s" long:"sleep" description:"Sleep time between queries." env:"PROMETHEUS_PUPPETDB_SLEEP" default:"5s"`
 	Manpage     bool   `short:"m" long:"manpage" description:"Output manpage."`
 }
@@ -79,7 +80,7 @@ func main() {
 			break
 		}
 
-		err = writeNodes(nodes, overrides, cfg.Port, cfg.File)
+		err = writeNodes(nodes, overrides, cfg.Port, cfg.ConfigDir, cfg.File)
 		if err != nil {
 			fmt.Println(err)
 			break
@@ -171,7 +172,7 @@ func getOverrides(client *http.Client, puppetdb string) (overrides map[string]ma
 	return
 }
 
-func writeNodes(nodes []Node, overrides map[string]map[string]interface{}, port int, file string) (err error) {
+func writeNodes(nodes []Node, overrides map[string]map[string]interface{}, port int, dir string, file string) (err error) {
 	allTargets := []Targets{}
 
 	prometheusConfig := PrometheusConfig{}
@@ -193,7 +194,7 @@ func writeNodes(nodes []Node, overrides map[string]map[string]interface{}, port 
 					scrapeConfig.MetricsPath = metricsPath.(string)
 				}
 				scrapeConfig.FileSdConfigs = []FileSdConfig{
-					{Files: []string{fmt.Sprintf("/etc/prometheus-targets/%s/*-targets.yaml", node.Certname)}},
+					{Files: []string{fmt.Sprintf("%s/targets/%s/*.yml", dir, node.Certname)}},
 				}
 				prometheusConfig.ScrapeConfigs = append(prometheusConfig.ScrapeConfigs, scrapeConfig)
 			}
@@ -216,7 +217,7 @@ func writeNodes(nodes []Node, overrides map[string]map[string]interface{}, port 
 	if err != nil {
 		return
 	}
-	ioutil.WriteFile("config.yaml", c, 0644)
+	ioutil.WriteFile(fmt.Sprintf("%s/conf.d/prometheus-puppetdb.yml", dir), c, 0644)
 
 	d, err := yaml.Marshal(&allTargets)
 
