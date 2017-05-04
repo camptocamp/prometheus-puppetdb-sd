@@ -230,16 +230,24 @@ func writeNodes(nodes []Node, overrides map[string]map[string]interface{}, port 
 				if err != nil {
 					return err
 				}
-				break
+			} else {
+				var target = fmt.Sprintf("%s:%v", hostname, zeport)
+				targets.Targets = append(targets.Targets, target)
+				targets.Labels = map[string]string{
+					"job":      "collectd",
+					"certname": node.Certname,
+				}
+				allTargets = append(allTargets, targets)
 			}
+		} else {
+			var target = fmt.Sprintf("%s:%v", hostname, zeport)
+			targets.Targets = append(targets.Targets, target)
+			targets.Labels = map[string]string{
+				"job":      "collectd",
+				"certname": node.Certname,
+			}
+			allTargets = append(allTargets, targets)
 		}
-		var target = fmt.Sprintf("%s:%v", hostname, zeport)
-		targets.Targets = append(targets.Targets, target)
-		targets.Labels = map[string]string{
-			"job":      "collectd",
-			"certname": node.Certname,
-		}
-		allTargets = append(allTargets, targets)
 	}
 	c, err := yaml.Marshal(&prometheusConfig)
 	if err != nil {
