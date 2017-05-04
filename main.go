@@ -212,6 +212,25 @@ func writeNodes(nodes []Node, overrides map[string]map[string]interface{}, port 
 					{Files: []string{fmt.Sprintf("%s/targets/%s/*.yml", dir, node.Certname)}},
 				}
 				prometheusConfig.ScrapeConfigs = append(prometheusConfig.ScrapeConfigs, scrapeConfig)
+
+				var target = fmt.Sprintf("%s:%v", hostname, zeport)
+				targets.Targets = append(targets.Targets, target)
+				targets.Labels = map[string]string{
+					"job":      "collectd",
+					"certname": node.Certname,
+				}
+
+				d, err := yaml.Marshal([]Targets{targets})
+				if err != nil {
+					return err
+				}
+
+				os.MkdirAll(fmt.Sprintf("%s/targets/%s/", dir, node.Certname), 0755)
+				err = ioutil.WriteFile(fmt.Sprintf("%s/targets/%s/%s.yml", dir, node.Certname, node.Certname), d, 0644)
+				if err != nil {
+					return err
+				}
+				break
 			}
 		}
 		var target = fmt.Sprintf("%s:%v", hostname, zeport)
