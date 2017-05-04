@@ -43,18 +43,18 @@ type Targets struct {
 }
 
 type FileSdConfig struct {
-	Files []string `yaml:"files"`
+	Files []string `yaml:"files,omitempty"`
 }
 
 type ScrapeConfig struct {
-	JobName       string         `yaml:"job_name"`
-	MetricsPath   string         `yaml:"metrics_path"`
-	Scheme        string         `yaml:"scheme"`
-	FileSdConfigs []FileSdConfig `yaml:"file_sd_configs"`
+	JobName       string         `yaml:"job_name,omitempty"`
+	MetricsPath   string         `yaml:"metrics_path,omitempty"`
+	Scheme        string         `yaml:"scheme,omitempty"`
+	FileSdConfigs []FileSdConfig `yaml:"file_sd_configs,omitempty"`
 }
 
 type PrometheusConfig struct {
-	ScrapeConfigs []ScrapeConfig `yaml:"scrape_configs"`
+	ScrapeConfigs []ScrapeConfig `yaml:"scrape_configs,omitempty"`
 }
 
 func main() {
@@ -188,13 +188,9 @@ func writeNodes(nodes []Node, overrides map[string]map[string]interface{}, port 
 				scrapeConfig.JobName = node.Certname
 				if okScheme {
 					scrapeConfig.Scheme = scheme.(string)
-				} else {
-					scrapeConfig.Scheme = "http"
 				}
 				if okMetricsPath {
 					scrapeConfig.MetricsPath = metricsPath.(string)
-				} else {
-					scrapeConfig.MetricsPath = "/metrics"
 				}
 				scrapeConfig.FileSdConfigs = []FileSdConfig{
 					{Files: []string{fmt.Sprintf("/etc/prometheus-targets/%s/*-targets.yaml", node.Certname)}},
