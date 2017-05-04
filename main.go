@@ -226,10 +226,20 @@ func writeNodes(nodes []Node, overrides map[string]map[string]interface{}, port 
 	if err != nil {
 		return
 	}
-	ioutil.WriteFile(fmt.Sprintf("%s/conf.d/prometheus-puppetdb.yml", dir), c, 0644)
+	err = ioutil.WriteFile(fmt.Sprintf("%s/conf.d/prometheus-puppetdb.yml", dir), c, 0644)
+	if err != nil {
+		return
+	}
 
 	d, err := yaml.Marshal(&allTargets)
+	if err != nil {
+		return
+	}
 
 	err = ioutil.WriteFile(file, d, 0644)
+	if err != nil {
+		return
+	}
+
 	return nil
 }
