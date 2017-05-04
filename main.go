@@ -226,6 +226,7 @@ func writeNodes(nodes []Node, overrides map[string]map[string]interface{}, port 
 	if err != nil {
 		return
 	}
+	os.MkdirAll(fmt.Sprintf("%s/conf.d", dir), 0755)
 	err = ioutil.WriteFile(fmt.Sprintf("%s/conf.d/prometheus-puppetdb.yml", dir), c, 0644)
 	if err != nil {
 		return
@@ -236,6 +237,7 @@ func writeNodes(nodes []Node, overrides map[string]map[string]interface{}, port 
 		return
 	}
 
+	os.MkdirAll(fmt.Sprintf("%s/targets/prometheus-puppetdb/", dir), 0755)
 	err = ioutil.WriteFile(file, d, 0644)
 	if err != nil {
 		return
