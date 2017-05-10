@@ -1,4 +1,4 @@
-.TH prometheus-puppetdb 1 "27 April 2017"
+.TH prometheus-puppetdb 1 "10 May 2017"
 .SH NAME
 prometheus-puppetdb \- Prometheus scrape lists based on PuppetDB
 .SH SYNOPSIS
@@ -14,16 +14,19 @@ Display version.
 \fB\fB\-u\fR, \fB\-\-puppetdb-url\fR <default: \fI"http://puppetdb:8080"\fR>\fP
 PuppetDB base URL.
 .TP
-\fB\fB\-q\fR, \fB\-\-puppetdb-query\fR <default: \fI"inventory[certname, facts] { nodes { deactivated is null } }"\fR>\fP
+\fB\fB\-q\fR, \fB\-\-puppetdb-query\fR <default: \fI"facts[certname, value] { name='ipaddress' and nodes { deactivated is null } }"\fR>\fP
 PuppetDB query.
 .TP
 \fB\fB\-p\fR, \fB\-\-collectd-port\fR <default: \fI"9103"\fR>\fP
 Collectd port.
 .TP
-\fB\fB\-c\fR, \fB\-\-config-file\fR <default: \fI"/etc/prometheus-targets/prometheus-targets.yml"\fR>\fP
+\fB\fB\-c\fR, \fB\-\-config-dir\fR <default: \fI"/etc/prometheus"\fR>\fP
+Prometheus config dir.
+.TP
+\fB\fB\-f\fR, \fB\-\-config-file\fR <default: \fI"/etc/prometheus/targets/prometheus-puppetdb/targets.yml"\fR>\fP
 Prometheus target file.
 .TP
-\fB\fB\-s\fR, \fB\-\-sleep\fR <default: \fI"15s"\fR>\fP
+\fB\fB\-s\fR, \fB\-\-sleep\fR <default: \fI"5s"\fR>\fP
 Sleep time between queries.
 .TP
 \fB\fB\-m\fR, \fB\-\-manpage\fR\fP
