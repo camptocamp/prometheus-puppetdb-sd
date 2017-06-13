@@ -218,6 +218,7 @@ func writeNodes(nodes []Node, overrides map[string]map[string]interface{}, port 
 				targets.Labels = map[string]string{
 					"job":      "collectd",
 					"certname": node.Certname,
+					"host": node.Certname,
 				}
 
 				d, err := yaml.Marshal([]Targets{targets})
@@ -236,6 +237,7 @@ func writeNodes(nodes []Node, overrides map[string]map[string]interface{}, port 
 				targets.Labels = map[string]string{
 					"job":      "collectd",
 					"certname": node.Certname,
+					"host": node.Certname,
 				}
 				allTargets = append(allTargets, targets)
 			}
@@ -245,6 +247,7 @@ func writeNodes(nodes []Node, overrides map[string]map[string]interface{}, port 
 			targets.Labels = map[string]string{
 				"job":      "collectd",
 				"certname": node.Certname,
+				"host": node.Certname,
 			}
 			allTargets = append(allTargets, targets)
 		}
