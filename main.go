@@ -19,6 +19,7 @@ import (
 )
 
 var version = "undefined"
+var transport *http.Transport
 
 type Config struct {
 	Version       bool   `short:"V" long:"version" description:"Display version."`
@@ -83,7 +84,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	var transport *http.Transport
 	if puppetdbURL.Scheme == "https" {
 		// Load client cert
 		cert, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
