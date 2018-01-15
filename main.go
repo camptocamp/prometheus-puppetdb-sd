@@ -2,12 +2,12 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"crypto/tls"
-	"crypto/x509"
 	"os"
 	"strings"
 	"time"
@@ -20,18 +20,18 @@ import (
 var version = "undefined"
 
 type Config struct {
-	Version     	bool   `short:"V" long:"version" description:"Display version."`
-	PuppetDBURL 	string `short:"u" long:"puppetdb-url" description:"PuppetDB base URL." env:"PROMETHEUS_PUPPETDB_URL" default:"http://puppetdb:8080"`
-	CertFile			string `short:"x" long:"cert-file" description:"A PEM eoncoded certificate file." env:"PROMETHEUS_CERT_FILE" default:"certs/client.pem"`
-	KeyFile				string `short:"y" long:"key-file" description:"A PEM eoncoded private key file." env:"PROMETHEUS_KEY_FILE" default:"certs/client.key"`
-	CACertFile		string `short:"z" long:"cacert-file" description:"A PEM eoncoded CA's certificate file." env:"PROMETHEUS_CACERT_FILE" default:"certs/cacert.pem"`
-	SSLSkipVerify	bool   `short:"k" long:"ssl-skip-verify" description:"Skip SSL verification." env:"PROMETHEUS_SSL_SKIP_VERIFY"`
-	Query       	string `short:"q" long:"puppetdb-query" description:"PuppetDB query." env:"PROMETHEUS_PUPPETDB_QUERY" default:"facts[certname, value] { name='ipaddress' and nodes { deactivated is null } }"`
-	Port        	int    `short:"p" long:"collectd-port" description:"Collectd port." env:"PROMETHEUS_PUPPETDB_COLLECTD_PORT" default:"9103"`
-	ConfigDir   	string `short:"c" long:"config-dir" description:"Prometheus config dir." env:"PROMETHEUS_CONFIG_DIR" default:"/etc/prometheus"`
-	File        	string `short:"f" long:"config-file" description:"Prometheus target file." env:"PROMETHEUS_PUPPETDB_FILE" default:"/etc/prometheus/targets/prometheus-puppetdb/targets.yml"`
-	Sleep       	string `short:"s" long:"sleep" description:"Sleep time between queries." env:"PROMETHEUS_PUPPETDB_SLEEP" default:"5s"`
-	Manpage     	bool   `short:"m" long:"manpage" description:"Output manpage."`
+	Version       bool   `short:"V" long:"version" description:"Display version."`
+	PuppetDBURL   string `short:"u" long:"puppetdb-url" description:"PuppetDB base URL." env:"PROMETHEUS_PUPPETDB_URL" default:"http://puppetdb:8080"`
+	CertFile      string `short:"x" long:"cert-file" description:"A PEM eoncoded certificate file." env:"PROMETHEUS_CERT_FILE" default:"certs/client.pem"`
+	KeyFile       string `short:"y" long:"key-file" description:"A PEM eoncoded private key file." env:"PROMETHEUS_KEY_FILE" default:"certs/client.key"`
+	CACertFile    string `short:"z" long:"cacert-file" description:"A PEM eoncoded CA's certificate file." env:"PROMETHEUS_CACERT_FILE" default:"certs/cacert.pem"`
+	SSLSkipVerify bool   `short:"k" long:"ssl-skip-verify" description:"Skip SSL verification." env:"PROMETHEUS_SSL_SKIP_VERIFY"`
+	Query         string `short:"q" long:"puppetdb-query" description:"PuppetDB query." env:"PROMETHEUS_PUPPETDB_QUERY" default:"facts[certname, value] { name='ipaddress' and nodes { deactivated is null } }"`
+	Port          int    `short:"p" long:"collectd-port" description:"Collectd port." env:"PROMETHEUS_PUPPETDB_COLLECTD_PORT" default:"9103"`
+	ConfigDir     string `short:"c" long:"config-dir" description:"Prometheus config dir." env:"PROMETHEUS_CONFIG_DIR" default:"/etc/prometheus"`
+	File          string `short:"f" long:"config-file" description:"Prometheus target file." env:"PROMETHEUS_PUPPETDB_FILE" default:"/etc/prometheus/targets/prometheus-puppetdb/targets.yml"`
+	Sleep         string `short:"s" long:"sleep" description:"Sleep time between queries." env:"PROMETHEUS_PUPPETDB_SLEEP" default:"5s"`
+	Manpage       bool   `short:"m" long:"manpage" description:"Output manpage."`
 }
 
 type Node struct {
@@ -89,9 +89,9 @@ func main() {
 
 	// Setup HTTPS client
 	tlsConfig := &tls.Config{
-					Certificates: 			[]tls.Certificate{cert},
-					RootCAs:      			caCertPool,
-					InsecureSkipVerify: cfg.SSLSkipVerify,
+		Certificates:       []tls.Certificate{cert},
+		RootCAs:            caCertPool,
+		InsecureSkipVerify: cfg.SSLSkipVerify,
 	}
 	tlsConfig.BuildNameToCertificate()
 	transport := &http.Transport{TLSClientConfig: tlsConfig}
@@ -248,7 +248,7 @@ func writeNodes(nodes []Node, overrides map[string]map[string]interface{}, port 
 				targets.Labels = map[string]string{
 					"job":      "collectd",
 					"certname": node.Certname,
-					"host": node.Certname,
+					"host":     node.Certname,
 				}
 
 				d, err := yaml.Marshal([]Targets{targets})
@@ -267,7 +267,7 @@ func writeNodes(nodes []Node, overrides map[string]map[string]interface{}, port 
 				targets.Labels = map[string]string{
 					"job":      "collectd",
 					"certname": node.Certname,
-					"host": node.Certname,
+					"host":     node.Certname,
 				}
 				allTargets = append(allTargets, targets)
 			}
@@ -277,7 +277,7 @@ func writeNodes(nodes []Node, overrides map[string]map[string]interface{}, port 
 			targets.Labels = map[string]string{
 				"job":      "collectd",
 				"certname": node.Certname,
-				"host": node.Certname,
+				"host":     node.Certname,
 			}
 			allTargets = append(allTargets, targets)
 		}
