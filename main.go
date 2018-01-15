@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -71,30 +72,47 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Load client cert
-	cert, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
+	puppetdbURL, err := url.Parse(cfg.PuppetDBURL)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	// Load CA cert
-	caCert, err := ioutil.ReadFile(cfg.CACertFile)
-	if err != nil {
-		fmt.Println(err)
+	if puppetdbURL.Scheme != "http" && puppetdbURL.Scheme != "https" {
+		fmt.Printf("%s is not a valid http scheme\n", puppetdbURL.Scheme)
 		os.Exit(1)
 	}
-	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM(caCert)
 
-	// Setup HTTPS client
-	tlsConfig := &tls.Config{
-		Certificates:       []tls.Certificate{cert},
-		RootCAs:            caCertPool,
-		InsecureSkipVerify: cfg.SSLSkipVerify,
+	var transport *http.Transport
+	if puppetdbURL.Scheme == "https" {
+		// Load client cert
+		cert, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		// Load CA cert
+		caCert, err := ioutil.ReadFile(cfg.CACertFile)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		caCertPool := x509.NewCertPool()
+		caCertPool.AppendCertsFromPEM(caCert)
+
+		// Setup HTTPS client
+		tlsConfig := &tls.Config{
+			Certificates:       []tls.Certificate{cert},
+			RootCAs:            caCertPool,
+			InsecureSkipVerify: cfg.SSLSkipVerify,
+		}
+		tlsConfig.BuildNameToCertificate()
+		transport = &http.Transport{TLSClientConfig: tlsConfig}
+	} else {
+		transport = &http.Transport{}
 	}
-	tlsConfig.BuildNameToCertificate()
-	transport := &http.Transport{TLSClientConfig: tlsConfig}
+
 	client := &http.Client{Transport: transport}
 
 	for {
