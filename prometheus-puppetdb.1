@@ -1,4 +1,4 @@
-.TH prometheus-puppetdb 1 "13 June 2017"
+.TH prometheus-puppetdb 1 "15 January 2018"
 .SH NAME
 prometheus-puppetdb \- Prometheus scrape lists based on PuppetDB
 .SH SYNOPSIS
@@ -13,6 +13,18 @@ Display version.
 .TP
 \fB\fB\-u\fR, \fB\-\-puppetdb-url\fR <default: \fI"http://puppetdb:8080"\fR>\fP
 PuppetDB base URL.
+.TP
+\fB\fB\-x\fR, \fB\-\-cert-file\fR <default: \fI"certs/client.pem"\fR>\fP
+A PEM eoncoded certificate file.
+.TP
+\fB\fB\-y\fR, \fB\-\-key-file\fR <default: \fI"certs/client.key"\fR>\fP
+A PEM eoncoded private key file.
+.TP
+\fB\fB\-z\fR, \fB\-\-cacert-file\fR <default: \fI"certs/cacert.pem"\fR>\fP
+A PEM eoncoded CA's certificate file.
+.TP
+\fB\fB\-k\fR, \fB\-\-ssl-skip-verify\fR <default: \fI$PROMETHEUS_SSL_SKIP_VERIFY\fR>\fP
+Skip SSL verification.
 .TP
 \fB\fB\-q\fR, \fB\-\-puppetdb-query\fR <default: \fI"facts[certname, value] { name='ipaddress' and nodes { deactivated is null } }"\fR>\fP
 PuppetDB query.
