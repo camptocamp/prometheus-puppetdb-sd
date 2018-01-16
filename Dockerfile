@@ -7,6 +7,7 @@ RUN make -C /tmp
 
 FROM scratch
 COPY --from=builder /tmp/prometheus-puppetdb /
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 ENTRYPOINT ["/prometheus-puppetdb"]
 VOLUME [ "/etc/prometheus-targets" ]
 CMD [""]
