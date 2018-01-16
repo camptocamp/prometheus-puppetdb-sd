@@ -1,5 +1,5 @@
 FROM golang:1.9 as builder
-COPY main.go Makefile /tmp/
+COPY . /tmp/
 RUN go get -u github.com/jessevdk/go-flags \
               gopkg.in/yaml.v2
 RUN make -C /tmp
