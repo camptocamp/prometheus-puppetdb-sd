@@ -208,7 +208,6 @@ OUTER:
 			}
 		}
 
-		fmt.Printf("Deleting: %s\n", file.Name())
 		err = os.Remove(fmt.Sprintf("%s/%s", dir, file.Name()))
 		if err != nil {
 			fmt.Println(err)
