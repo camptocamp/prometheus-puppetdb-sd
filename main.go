@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -33,7 +34,7 @@ type Config struct {
 	Filter          string `short:"f" long:"puppetdb-filter" description:"PuppetDB filter." env:"PROMETHEUS_PUPPETDB_FILTER" default:"name='ipaddress' and nodes { deactivated is null }"`
 	RoleMappingFile string `short:"r" long:"role-mapping-file" description:"Role mapping configuration file" env:"PROMETHEUS_ROLE_MAPPING_FILE" default:"role-mapping.yaml"`
 	TargetsDir      string `short:"c" long:"targets-dir" description:"Directory to store File SD targets files." env:"PROMETHEUS_TARGETS_DIR" default:"/etc/prometheus/targets"`
-	Sleep           string `short:"s" long:"sleep" description:"Sleep time between queries." env:"PROMETHEUS_PUPPETDB_SLEEP" default:"5s"`
+	Sleep           string `short:"s" long:"sleep" description:"Sleep time between queries." env:"PROMETHEUS_PUPPETDB_SLEEP" default:"60s"`
 	Manpage         bool   `short:"m" long:"manpage" description:"Output manpage."`
 }
 
@@ -114,8 +115,12 @@ func main() {
 			os.Exit(1)
 		}
 
-		// At this point, I think we should delete the TargetsDir content as we could gte stuck with stale exporter targets
-		// for exporters that we removed
+		// Clean the targets directory, remove any target files that are no longer listed in Role Mapping
+		err = cleanupTargetsDir(cfg.TargetsDir, roleMapping)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 
 		// Iterate through the Exporters
 		for e := range roleMapping {
@@ -186,9 +191,38 @@ func loadRoleMapping(mappingFile string) (roleMapping []RoleMapping, err error) 
 	return
 }
 
+// Iterate through the yml & yaml files in TargetsDir and remove all that do not match an Exporter in roleMapping
+func cleanupTargetsDir(dir string, roles []RoleMapping) (err error) {
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+OUTER:
+	for _, file := range files {
+		for r := range roles {
+			found, _ := regexp.MatchString(fmt.Sprintf("%s.(yaml|yml)", roles[r].Exporter), file.Name())
+			if found {
+				continue OUTER
+			}
+		}
+
+		fmt.Printf("Deleting: %s\n", file.Name())
+		err = os.Remove(fmt.Sprintf("%s/%s", dir, file.Name()))
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+	}
+	return
+}
+
 func getNodes(client *http.Client, puppetdb string, query string, filter string, role string) (nodes []Node, err error) {
-	// This is temporary
+	// This was temporary hack
 	//q := fmt.Sprintf("facts[certname,value] {name='ipaddress' and nodes { deactivated is null } and facts { name='role' and value='%s' } }", role)
+
+	// Build the query from Query, Filter and the role
 	q := fmt.Sprintf("%s {%s and facts { name='role' and value='%s' } }", query, filter, role)
 
 	form := strings.NewReader(fmt.Sprintf("{\"query\":\"%s\"}", q))
