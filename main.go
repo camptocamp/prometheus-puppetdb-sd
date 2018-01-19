@@ -72,7 +72,7 @@ func init() {
 }
 
 func bailout() {
-	log.Warn("Caught signal, bailing out. Bye bye!")
+	log.Warn("Caught a signal, bailing out. Bye bye!")
 }
 
 func main() {
@@ -168,7 +168,7 @@ func main() {
 			}
 
 			if err == nil {
-				log.Infof("Writing nodes information to target file for job: %s", roleMapping[e].Exporter)
+				log.Infof("Writing nodes information to target file for job=%s", roleMapping[e].Exporter)
 				// Write the nodes to a Targets file per Exporter (==Job)
 				err = writeNodes(nodes, roleMapping[e].Port, roleMapping[e].Path, roleMapping[e].Scheme, roleMapping[e].Exporter, cfg.TargetsDir)
 				if err != nil {
