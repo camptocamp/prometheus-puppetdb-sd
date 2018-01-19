@@ -153,6 +153,7 @@ func main() {
 
 		// Iterate through the Exporters
 		for e := range roleMapping {
+			log.Infof("Starting discovery for job=%s", roleMapping[e].Exporter)
 			var nodes []Node
 			// Iterate through the Roles mapped to each Exporter
 			for r := range roleMapping[e].Roles {
