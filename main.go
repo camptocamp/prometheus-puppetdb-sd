@@ -148,7 +148,7 @@ func main() {
 		// Clean the targets directory, remove any target files that are no longer listed in Role Mapping
 		err = cleanupTargetsDir(cfg.TargetsDir, roleMapping)
 		if err != nil {
-			log.Fatal("Error cleaning up targets directory, error=", err)
+			log.Error("Error cleaning up targets directory, error=", err)
 		}
 
 		// Iterate through the Exporters
@@ -255,11 +255,8 @@ OUTER:
 }
 
 func getNodes(client *http.Client, puppetdb string, query string, filter string, role string) (nodes []Node, err error) {
-	// This was temporary hack
-	//q := fmt.Sprintf("facts[certname,value] {name='ipaddress' and nodes { deactivated is null } and facts { name='role' and value='%s' } }", role)
-
 	// Build the query from Query, Filter and the role
-	q := fmt.Sprintf("%s {%s and facts { name='role' and value='%s' } }", query, filter, role)
+	q := fmt.Sprintf("%s { %s and facts { name='role' and value='%s' } }", query, filter, role)
 
 	form := strings.NewReader(fmt.Sprintf("{\"query\":\"%s\"}", q))
 	puppetdbURL := fmt.Sprintf("%s/pdb/query/v4", puppetdb)
