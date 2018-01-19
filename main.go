@@ -10,12 +10,15 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"regexp"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/jessevdk/go-flags"
+	log "github.com/sirupsen/logrus"
 
 	"gopkg.in/yaml.v2"
 )
@@ -56,41 +59,67 @@ type Targets struct {
 	Labels  map[string]string `yaml:"labels"`
 }
 
+func init() {
+	// Log as JSON instead of the default ASCII formatter.
+	//log.SetFormatter(&log.JSONFormatter{})
+
+	// Output to stdout instead of the default stderr
+	// Can be any io.Writer, see below for File example
+	log.SetOutput(os.Stdout)
+
+	// Only log the warning severity or above.
+	//log.SetLevel(log.WarnLevel)
+}
+
+func bailout() {
+	log.Warn("Caught signal, bailing out. Bye bye!")
+}
+
 func main() {
+	c := make(chan os.Signal, 2)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		bailout()
+		os.Exit(1)
+	}()
+
 	cfg, err := loadConfig(version)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatal("Failed to parse command flags, error=", err)
 	}
+
+	log.Info("Prometheus PuppetDB Service Discovery starting!")
+	log.Info("prometheus-puppetdb v", version)
 
 	puppetdbURL, err := url.Parse(cfg.PuppetDBURL)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatal("Couldn't parse PuppetDB URL, error=", err)
 	}
 
 	if puppetdbURL.Scheme != "http" && puppetdbURL.Scheme != "https" {
-		fmt.Printf("%s is not a valid http scheme\n", puppetdbURL.Scheme)
-		os.Exit(1)
+		log.Fatalf("%s is not a valid scheme for PuppetDB URL (valid options: http or https)", puppetdbURL.Scheme)
 	}
 
 	if puppetdbURL.Scheme == "https" {
+		log.Info("Setting up https client with Client TLS authentication")
 		// Load client cert
 		cert, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			log.Fatal("Failed loading client certificate, error=", err)
 		}
 
 		// Load CA cert
 		caCert, err := ioutil.ReadFile(cfg.CACertFile)
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			log.Fatal("Failed loading CA's certificate, error=", err)
 		}
 		caCertPool := x509.NewCertPool()
 		caCertPool.AppendCertsFromPEM(caCert)
 
+		if cfg.SSLSkipVerify {
+			log.Warn("Skipping SSL certificate verification!")
+		}
 		// Setup HTTPS client
 		tlsConfig := &tls.Config{
 			Certificates:       []tls.Certificate{cert},
@@ -100,26 +129,26 @@ func main() {
 		tlsConfig.BuildNameToCertificate()
 		transport = &http.Transport{TLSClientConfig: tlsConfig}
 	} else {
+		log.Info("Setting up http client without Client TLS authentication")
 		transport = &http.Transport{}
 	}
 
 	// Setup the http client
 	client := &http.Client{Transport: transport}
 
+	log.Info("Starting service discovery loop")
 	// Start the main loop
 	for {
 		// Read the role mapping from configuration file
 		roleMapping, err := loadRoleMapping(cfg.RoleMappingFile)
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			log.Fatal("Couldn't load Role Mapping configuration file, error=", err)
 		}
 
 		// Clean the targets directory, remove any target files that are no longer listed in Role Mapping
 		err = cleanupTargetsDir(cfg.TargetsDir, roleMapping)
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			log.Fatal("Error cleaning up targets directory, error=", err)
 		}
 
 		// Iterate through the Exporters
@@ -127,32 +156,39 @@ func main() {
 			var nodes []Node
 			// Iterate through the Roles mapped to each Exporter
 			for r := range roleMapping[e].Roles {
+				log.Infof("Collecting nodes information for job=%s role=%s", roleMapping[e].Exporter, roleMapping[e].Roles[r])
 				var tmpNodes []Node
 				// Get the nodes for this role
 				tmpNodes, err = getNodes(client, cfg.PuppetDBURL, cfg.Query, cfg.Filter, roleMapping[e].Roles[r])
 				if err != nil {
-					fmt.Println(err)
+					log.Error("Failed to fetch nodes from PuppetDB, error=", err)
 					break
 				}
 				nodes = append(nodes, tmpNodes...)
 			}
 
-			// Write the nodes to a Targets file per Exporter (==Job)
-			err = writeNodes(nodes, roleMapping[e].Port, roleMapping[e].Path, roleMapping[e].Scheme, roleMapping[e].Exporter, cfg.TargetsDir)
-			if err != nil {
-				fmt.Println(err)
-				break
+			if err == nil {
+				log.Infof("Writing nodes information to target file for job: %s", roleMapping[e].Exporter)
+				// Write the nodes to a Targets file per Exporter (==Job)
+				err = writeNodes(nodes, roleMapping[e].Port, roleMapping[e].Path, roleMapping[e].Scheme, roleMapping[e].Exporter, cfg.TargetsDir)
+				if err != nil {
+					log.Error("Couldn't write target file, error=", err)
+					break
+				}
+			} else {
+				log.Warn("Node collection failed, not updating targets")
 			}
 		}
 
 		// Sleep...
 		sleep, err := time.ParseDuration(cfg.Sleep)
 		if err != nil {
-			fmt.Println(err)
-			break
+			log.Error("Failed to parse sleep duration, falling back to 60s, error=", err)
+			sleep = time.Minute
 		}
-		fmt.Printf("Sleeping for %v\n", sleep)
+		log.Infof("Sleeping for %v", sleep)
 		time.Sleep(sleep)
+		log.Info("Wake up and start again...")
 	}
 }
 
@@ -160,8 +196,7 @@ func loadConfig(version string) (c Config, err error) {
 	parser := flags.NewParser(&c, flags.Default)
 	_, err = parser.Parse()
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return
 	}
 
 	if c.Version {
@@ -171,7 +206,7 @@ func loadConfig(version string) (c Config, err error) {
 
 	if c.Manpage {
 		var buf bytes.Buffer
-		parser.ShortDescription = "Prometheus scrape lists based on PuppetDB"
+		parser.ShortDescription = "Prometheus service discovery based on PuppetDB"
 		parser.WriteManPage(&buf)
 		fmt.Printf(buf.String())
 		os.Exit(0)
@@ -182,12 +217,16 @@ func loadConfig(version string) (c Config, err error) {
 func loadRoleMapping(mappingFile string) (roleMapping []RoleMapping, err error) {
 	filename, _ := filepath.Abs(mappingFile)
 	yamlFile, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return
+	}
 
 	err = yaml.Unmarshal(yamlFile, &roleMapping)
 	if err != nil {
 		return
 	}
 
+	log.Info("Role mapping configuration loaded")
 	return
 }
 
@@ -195,7 +234,6 @@ func loadRoleMapping(mappingFile string) (roleMapping []RoleMapping, err error) 
 func cleanupTargetsDir(dir string, roles []RoleMapping) (err error) {
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
-		fmt.Println(err)
 		return
 	}
 
@@ -210,7 +248,6 @@ OUTER:
 
 		err = os.Remove(fmt.Sprintf("%s/%s", dir, file.Name()))
 		if err != nil {
-			fmt.Println(err)
 			return
 		}
 	}
