@@ -96,6 +96,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Couldn't parse PuppetDB URL, error=", err)
 	}
+	log.Infof("PuppetDB URL for queries: %s", puppetdbURL)
 
 	if puppetdbURL.Scheme != "http" && puppetdbURL.Scheme != "https" {
 		log.Fatalf("%s is not a valid scheme for PuppetDB URL (valid options: http or https)", puppetdbURL.Scheme)
