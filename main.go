@@ -140,7 +140,7 @@ func main() {
 	log.Info("Starting service discovery loop")
 	// Start the main loop
 	for {
-		// Read the role mapping from configuration file
+		// Read the role mapping from configuration file, we do this every time in case the file was updated
 		roleMapping, err := loadRoleMapping(cfg.RoleMappingFile)
 		if err != nil {
 			log.Fatal("Couldn't load Role Mapping configuration file, error=", err)
@@ -188,7 +188,7 @@ func main() {
 			log.Error("Failed to parse sleep duration, falling back to 60s, error=", err)
 			sleep = time.Minute
 		}
-		log.Infof("Sleeping for %v", sleep)
+		log.Infof("All done, sleeping for %v", sleep)
 		time.Sleep(sleep)
 		log.Info("Wake up and start again...")
 	}
@@ -202,7 +202,7 @@ func loadConfig(version string) (c Config, err error) {
 	}
 
 	if c.Version {
-		fmt.Printf("Prometheus-puppetdb v%v\n", version)
+		fmt.Printf("prometheus-puppetdb v%v\n", version)
 		os.Exit(0)
 	}
 
@@ -253,6 +253,8 @@ OUTER:
 			return
 		}
 	}
+
+	log.Info("Targets dir cleanup done")
 	return
 }
 
