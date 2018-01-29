@@ -76,6 +76,7 @@ func bailout() {
 }
 
 func main() {
+	// Catch signals and bailout
 	c := make(chan os.Signal, 2)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
@@ -86,7 +87,7 @@ func main() {
 
 	cfg, err := loadConfig(version)
 	if err != nil {
-		log.Fatal("Failed to parse command flags, error=", err)
+		log.WithField("error", err).Fatal("Failed to parse command flags")
 	}
 
 	log.Info("Prometheus PuppetDB Service Discovery starting!")
@@ -94,7 +95,7 @@ func main() {
 
 	puppetdbURL, err := url.Parse(cfg.PuppetDBURL)
 	if err != nil {
-		log.Fatal("Couldn't parse PuppetDB URL, error=", err)
+		log.WithField("error", err).Fatal("Couldn't parse PuppetDB URL")
 	}
 	log.Infof("PuppetDB URL for queries: %s", puppetdbURL)
 
@@ -107,13 +108,13 @@ func main() {
 		// Load client cert
 		cert, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
 		if err != nil {
-			log.Fatal("Failed loading client certificate, error=", err)
+			log.WithField("error", err).Fatal("Failed loading client certificate")
 		}
 
 		// Load CA cert
 		caCert, err := ioutil.ReadFile(cfg.CACertFile)
 		if err != nil {
-			log.Fatal("Failed loading CA's certificate, error=", err)
+			log.WithField("error", err).Fatal("Failed loading CA's certificate")
 		}
 		caCertPool := x509.NewCertPool()
 		caCertPool.AppendCertsFromPEM(caCert)
@@ -143,38 +144,45 @@ func main() {
 		// Read the role mapping from configuration file, we do this every time in case the file was updated
 		roleMapping, err := loadRoleMapping(cfg.RoleMappingFile)
 		if err != nil {
-			log.Fatal("Couldn't load Role Mapping configuration file, error=", err)
+			log.WithField("error", err).Fatal("Couldn't load Role Mapping configuration file")
 		}
 
 		// Clean the targets directory, remove any target files that are no longer listed in Role Mapping
 		err = cleanupTargetsDir(cfg.TargetsDir, roleMapping)
 		if err != nil {
-			log.Error("Error cleaning up targets directory, error=", err)
+			log.WithField("error", err).Error("Error cleaning up targets directory")
 		}
 
 		// Iterate through the Exporters
 		for e := range roleMapping {
-			log.Infof("Starting discovery for job=%s", roleMapping[e].Exporter)
+			log.WithFields(log.Fields{
+				"job": roleMapping[e].Exporter,
+			}).Info("Starting discovery")
 			var nodes []Node
 			// Iterate through the Roles mapped to each Exporter
 			for r := range roleMapping[e].Roles {
-				log.Infof("Collecting nodes information for job=%s role=%s", roleMapping[e].Exporter, roleMapping[e].Roles[r])
+				log.WithFields(log.Fields{
+					"job":  roleMapping[e].Exporter,
+					"role": roleMapping[e].Roles[r],
+				}).Info("Collecting nodes information")
 				var tmpNodes []Node
 				// Get the nodes for this role
 				tmpNodes, err = getNodes(client, cfg.PuppetDBURL, cfg.Query, cfg.Filter, roleMapping[e].Roles[r])
 				if err != nil {
-					log.Error("Failed to fetch nodes from PuppetDB, error=", err)
+					log.WithField("error", err).Error("Failed to fetch nodes from PuppetDB")
 					break
 				}
 				nodes = append(nodes, tmpNodes...)
 			}
 
 			if err == nil {
-				log.Infof("Writing nodes information to target file for job=%s", roleMapping[e].Exporter)
+				log.WithFields(log.Fields{
+					"job": roleMapping[e].Exporter,
+				}).Info("Writing nodes information to target file")
 				// Write the nodes to a Targets file per Exporter (==Job)
 				err = writeNodes(nodes, roleMapping[e].Port, roleMapping[e].Path, roleMapping[e].Scheme, roleMapping[e].Exporter, cfg.TargetsDir)
 				if err != nil {
-					log.Error("Couldn't write target file, error=", err)
+					log.WithField("error", err).Error("Couldn't write target file")
 					break
 				}
 			} else {
@@ -185,7 +193,7 @@ func main() {
 		// Sleep...
 		sleep, err := time.ParseDuration(cfg.Sleep)
 		if err != nil {
-			log.Error("Failed to parse sleep duration, falling back to 60s, error=", err)
+			log.WithField("error", err).Error("Failed to parse sleep duration, falling back to 60s")
 			sleep = time.Minute
 		}
 		log.Infof("All done, sleeping for %v", sleep)
