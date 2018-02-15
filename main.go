@@ -78,78 +78,6 @@ func (p *PrometheusConfig) addTarget(jobName, metricsPath, scheme, target, certn
 	p.ScrapeConfigs = append(p.ScrapeConfigs, &config)
 }
 
-func main() {
-	cfg, err := loadConfig(version)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	puppetdbURL, err := url.Parse(cfg.PuppetDBURL)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	if puppetdbURL.Scheme != "http" && puppetdbURL.Scheme != "https" {
-		fmt.Printf("%s is not a valid http scheme\n", puppetdbURL.Scheme)
-		os.Exit(1)
-	}
-
-	if puppetdbURL.Scheme == "https" {
-		// Load client cert
-		cert, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		// Load CA cert
-		caCert, err := ioutil.ReadFile(cfg.CACertFile)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		caCertPool := x509.NewCertPool()
-		caCertPool.AppendCertsFromPEM(caCert)
-
-		// Setup HTTPS client
-		tlsConfig := &tls.Config{
-			Certificates:       []tls.Certificate{cert},
-			RootCAs:            caCertPool,
-			InsecureSkipVerify: cfg.SSLSkipVerify,
-		}
-		tlsConfig.BuildNameToCertificate()
-		transport = &http.Transport{TLSClientConfig: tlsConfig}
-	} else {
-		transport = &http.Transport{}
-	}
-
-	client := &http.Client{Transport: transport}
-
-	for {
-		nodes, err := getNodes(client, cfg.PuppetDBURL, cfg.Query)
-		if err != nil {
-			fmt.Println(err)
-			break
-		}
-
-		err = writeNodes(nodes, cfg.ConfigDir)
-		if err != nil {
-			fmt.Println(err)
-			break
-		}
-
-		sleep, err := time.ParseDuration(cfg.Sleep)
-		if err != nil {
-			fmt.Println(err)
-			break
-		}
-		fmt.Printf("Sleeping for %v\n", sleep)
-		time.Sleep(sleep)
-	}
-}
-
 func loadConfig(version string) (c Config, err error) {
 	parser := flags.NewParser(&c, flags.Default)
 	_, err = parser.Parse()
@@ -220,4 +148,76 @@ func writeNodes(nodes []Node, dir string) (err error) {
 	}
 
 	return nil
+}
+
+func main() {
+	cfg, err := loadConfig(version)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	puppetdbURL, err := url.Parse(cfg.PuppetDBURL)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	if puppetdbURL.Scheme != "http" && puppetdbURL.Scheme != "https" {
+		fmt.Printf("%s is not a valid http scheme\n", puppetdbURL.Scheme)
+		os.Exit(1)
+	}
+
+	if puppetdbURL.Scheme == "https" {
+		// Load client cert
+		cert, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		// Load CA cert
+		caCert, err := ioutil.ReadFile(cfg.CACertFile)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		caCertPool := x509.NewCertPool()
+		caCertPool.AppendCertsFromPEM(caCert)
+
+		// Setup HTTPS client
+		tlsConfig := &tls.Config{
+			Certificates:       []tls.Certificate{cert},
+			RootCAs:            caCertPool,
+			InsecureSkipVerify: cfg.SSLSkipVerify,
+		}
+		tlsConfig.BuildNameToCertificate()
+		transport = &http.Transport{TLSClientConfig: tlsConfig}
+	} else {
+		transport = &http.Transport{}
+	}
+
+	client := &http.Client{Transport: transport}
+
+	for {
+		nodes, err := getNodes(client, cfg.PuppetDBURL, cfg.Query)
+		if err != nil {
+			fmt.Println(err)
+			break
+		}
+
+		err = writeNodes(nodes, cfg.ConfigDir)
+		if err != nil {
+			fmt.Println(err)
+			break
+		}
+
+		sleep, err := time.ParseDuration(cfg.Sleep)
+		if err != nil {
+			fmt.Println(err)
+			break
+		}
+		fmt.Printf("Sleeping for %v\n", sleep)
+		time.Sleep(sleep)
+	}
 }
