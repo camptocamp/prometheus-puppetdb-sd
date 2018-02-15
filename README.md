@@ -38,3 +38,36 @@ Application Options:
 Help Options:
   -h, --help            Show this help message
 ```
+
+## How does it work
+
+Prometheus-puppetdb looks for a fact in PuppetDB ("prometheus_exporters" by default) to generate the list of targets.
+
+The fact must be a hash using exporters as keys and URIs as values,
+e.g.:
+
+   collectd: http://node.example.com:1234/metrics
+
+You can populate the fact from Puppet using, for example, the `puppetlabs/concat` module:
+
+For example, you can put this in your main profile:
+
+```puppet
+concat { '/etc/puppetlabs/facter/facts.d/prometheus_exporters.yaml':
+  ensure => present,
+}
+concat::fragment {'prometheus_exporters':
+  target  => '/etc/puppetlabs/facter/facts.d/prometheus_exporters.yaml',
+  content => "prometheus_exporters:\n",
+  order   => '1',
+}
+```
+
+Then, in every profile that deploys a Prometheus Exporter:
+
+```puppet
+concat::fragment {'prometheus_exporter_collectd':
+  target  => '/etc/puppetlabs/facter/facts.d/prometheus_exporters.yaml',
+  content => "  collectd: http://${::fqdn}:9103/metrics\n",
+}
+```
