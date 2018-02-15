@@ -24,16 +24,16 @@ var version = "undefined"
 var transport *http.Transport
 
 type Config struct {
-	Version       bool   `short:"V" long:"version" description:"Display version."`
-	PuppetDBURL   string `short:"u" long:"puppetdb-url" description:"PuppetDB base URL." env:"PROMETHEUS_PUPPETDB_URL" default:"http://puppetdb:8080"`
-	CertFile      string `short:"x" long:"cert-file" description:"A PEM encoded certificate file." env:"PROMETHEUS_CERT_FILE" default:"certs/client.pem"`
-	KeyFile       string `short:"y" long:"key-file" description:"A PEM encoded private key file." env:"PROMETHEUS_KEY_FILE" default:"certs/client.key"`
-	CACertFile    string `short:"z" long:"cacert-file" description:"A PEM encoded CA's certificate file." env:"PROMETHEUS_CACERT_FILE" default:"certs/cacert.pem"`
-	SSLSkipVerify bool   `short:"k" long:"ssl-skip-verify" description:"Skip SSL verification." env:"PROMETHEUS_SSL_SKIP_VERIFY"`
-	Query         string `short:"q" long:"puppetdb-query" description:"PuppetDB query." env:"PROMETHEUS_PUPPETDB_QUERY" default:"facts[certname, value] { name='prometheus_exporters' and nodes { deactivated is null } }"`
-	ConfigDir     string `short:"c" long:"config-dir" description:"Prometheus config dir." env:"PROMETHEUS_CONFIG_DIR" default:"/etc/prometheus"`
-	Sleep         string `short:"s" long:"sleep" description:"Sleep time between queries." env:"PROMETHEUS_PUPPETDB_SLEEP" default:"5s"`
-	Manpage       bool   `short:"m" long:"manpage" description:"Output manpage."`
+	Version       bool          `short:"V" long:"version" description:"Display version."`
+	PuppetDBURL   string        `short:"u" long:"puppetdb-url" description:"PuppetDB base URL." env:"PROMETHEUS_PUPPETDB_URL" default:"http://puppetdb:8080"`
+	CertFile      string        `short:"x" long:"cert-file" description:"A PEM encoded certificate file." env:"PROMETHEUS_CERT_FILE" default:"certs/client.pem"`
+	KeyFile       string        `short:"y" long:"key-file" description:"A PEM encoded private key file." env:"PROMETHEUS_KEY_FILE" default:"certs/client.key"`
+	CACertFile    string        `short:"z" long:"cacert-file" description:"A PEM encoded CA's certificate file." env:"PROMETHEUS_CACERT_FILE" default:"certs/cacert.pem"`
+	SSLSkipVerify bool          `short:"k" long:"ssl-skip-verify" description:"Skip SSL verification." env:"PROMETHEUS_SSL_SKIP_VERIFY"`
+	Query         string        `short:"q" long:"puppetdb-query" description:"PuppetDB query." env:"PROMETHEUS_PUPPETDB_QUERY" default:"facts[certname, value] { name='prometheus_exporters' and nodes { deactivated is null } }"`
+	ConfigDir     string        `short:"c" long:"config-dir" description:"Prometheus config dir." env:"PROMETHEUS_CONFIG_DIR" default:"/etc/prometheus"`
+	Sleep         time.Duration `short:"s" long:"sleep" description:"Sleep time between queries." env:"PROMETHEUS_PUPPETDB_SLEEP" default:"5s"`
+	Manpage       bool          `short:"m" long:"manpage" description:"Output manpage."`
 }
 
 type Node struct {
@@ -215,12 +215,7 @@ func main() {
 			break
 		}
 
-		sleep, err := time.ParseDuration(cfg.Sleep)
-		if err != nil {
-			log.Errorf("failed to parse sleep duration: %v", err)
-			break
-		}
-		log.Infof("Sleeping for %v", sleep)
-		time.Sleep(sleep)
+		log.Infof("Sleeping for %v", cfg.Sleep)
+		time.Sleep(cfg.Sleep)
 	}
 }
