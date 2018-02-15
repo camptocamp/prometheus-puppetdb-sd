@@ -159,12 +159,12 @@ func init() {
 
 	cfg, err = loadConfig(version)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to load config: %v", err)
 	}
 
 	puppetdbURL, err := url.Parse(cfg.PuppetDBURL)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to parse PuppetDB URL: %v", err)
 	}
 
 	if puppetdbURL.Scheme != "http" && puppetdbURL.Scheme != "https" {
@@ -205,19 +205,19 @@ func main() {
 	for {
 		nodes, err := getNodes(client, cfg.PuppetDBURL, cfg.Query)
 		if err != nil {
-			log.Error(err)
+			log.Errorf("failed to get nodes: %v", err)
 			break
 		}
 
 		err = writeNodes(nodes, cfg.ConfigDir)
 		if err != nil {
-			log.Error(err)
+			log.Errorf("failed to write nodes: %v", err)
 			break
 		}
 
 		sleep, err := time.ParseDuration(cfg.Sleep)
 		if err != nil {
-			log.Error(err)
+			log.Errorf("failed to parse sleep duration: %v", err)
 			break
 		}
 		log.Infof("Sleeping for %v", sleep)
