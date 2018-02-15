@@ -39,10 +39,6 @@ type Node struct {
 	Exporters map[string]string `json:"value"`
 }
 
-type FileSdConfig struct {
-	Files []string `yaml:"files,omitempty"`
-}
-
 type StaticConfig struct {
 	Targets []string          `yaml:"targets"`
 	Labels  map[string]string `yaml:"labels"`
@@ -52,7 +48,6 @@ type ScrapeConfig struct {
 	JobName       string         `yaml:"job_name,omitempty"`
 	MetricsPath   string         `yaml:"metrics_path,omitempty"`
 	Scheme        string         `yaml:"scheme,omitempty"`
-	FileSdConfigs []FileSdConfig `yaml:"file_sd_configs,omitempty"`
 	StaticConfigs []StaticConfig `yaml:"static_configs,omitempty"`
 }
 
