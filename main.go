@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	yaml "gopkg.in/yaml.v1"
 
 	"github.com/jessevdk/go-flags"
@@ -82,8 +84,7 @@ func loadConfig(version string) (c Config, err error) {
 	parser := flags.NewParser(&c, flags.Default)
 	_, err = parser.Parse()
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 
 	if c.Version {
@@ -158,34 +159,29 @@ func init() {
 
 	cfg, err = loadConfig(version)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 
 	puppetdbURL, err := url.Parse(cfg.PuppetDBURL)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 
 	if puppetdbURL.Scheme != "http" && puppetdbURL.Scheme != "https" {
-		fmt.Printf("%s is not a valid http scheme\n", puppetdbURL.Scheme)
-		os.Exit(1)
+		log.Fatalf("%s is not a valid http scheme\n", puppetdbURL.Scheme)
 	}
 
 	if puppetdbURL.Scheme == "https" {
 		// Load client cert
 		cert, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			log.Fatal(err)
 		}
 
 		// Load CA cert
 		caCert, err := ioutil.ReadFile(cfg.CACertFile)
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			log.Fatal(err)
 		}
 		caCertPool := x509.NewCertPool()
 		caCertPool.AppendCertsFromPEM(caCert)
@@ -209,22 +205,22 @@ func main() {
 	for {
 		nodes, err := getNodes(client, cfg.PuppetDBURL, cfg.Query)
 		if err != nil {
-			fmt.Println(err)
+			log.Error(err)
 			break
 		}
 
 		err = writeNodes(nodes, cfg.ConfigDir)
 		if err != nil {
-			fmt.Println(err)
+			log.Error(err)
 			break
 		}
 
 		sleep, err := time.ParseDuration(cfg.Sleep)
 		if err != nil {
-			fmt.Println(err)
+			log.Error(err)
 			break
 		}
-		fmt.Printf("Sleeping for %v\n", sleep)
+		log.Infof("Sleeping for %v", sleep)
 		time.Sleep(sleep)
 	}
 }
