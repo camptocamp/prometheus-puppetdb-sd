@@ -150,8 +150,13 @@ func writeNodes(nodes []Node, dir string) (err error) {
 	return nil
 }
 
-func main() {
-	cfg, err := loadConfig(version)
+var client *http.Client
+var cfg Config
+
+func init() {
+	var err error
+
+	cfg, err = loadConfig(version)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -197,8 +202,10 @@ func main() {
 		transport = &http.Transport{}
 	}
 
-	client := &http.Client{Transport: transport}
+	client = &http.Client{Transport: transport}
+}
 
+func main() {
 	for {
 		nodes, err := getNodes(client, cfg.PuppetDBURL, cfg.Query)
 		if err != nil {
