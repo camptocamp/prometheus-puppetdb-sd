@@ -26,10 +26,12 @@ Usage:
 Application Options:
   -V, --version         Display version.
   -u, --puppetdb-url=   PuppetDB base URL. (default: http://puppetdb:8080) [$PROMETHEUS_PUPPETDB_URL]
-  -q, --puppetdb-query= PuppetDB query. (default: facts { name='ipaddress' and nodes { deactivated is null and facts { name='collectd_version' and value ~ '^5\\.7' } and resources {
-                        type='Class' and title='Collectd' } } }) [$PROMETHEUS_PUPPETDB_QUERY]
-  -p, --collectd-port=  Collectd port. (default: 9103) [$PROMETHEUS_PUPPETDB_COLLECTD_PORT]
-  -c, --config-file=    Prometheus target file. (default: /etc/prometheus-config/prometheus-targets.yml) [$PROMETHEUS_PUPPETDB_FILE]
+  -x, --cert-file=      A PEM encoded certificate file. (default: certs/client.pem) [$PROMETHEUS_CERT_FILE]
+  -y, --key-file=       A PEM encoded private key file. (default: certs/client.key) [$PROMETHEUS_KEY_FILE]
+  -z, --cacert-file=    A PEM encoded CA's certificate file. (default: certs/cacert.pem) [$PROMETHEUS_CACERT_FILE]
+  -k, --ssl-skip-verify Skip SSL verification.
+  -q, --puppetdb-query= PuppetDB query. (default: facts[certname, value] { name='prometheus_exporters' and nodes { deactivated is null } }) [$PROMETHEUS_PUPPETDB_QUERY]
+  -c, --config-dir=     Prometheus config dir. (default: /etc/prometheus) [$PROMETHEUS_CONFIG_DIR]
   -s, --sleep=          Sleep time between queries. (default: 5s) [$PROMETHEUS_PUPPETDB_SLEEP]
   -m, --manpage         Output manpage.
 
