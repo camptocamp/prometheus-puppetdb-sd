@@ -4,7 +4,8 @@ COPY . .
 # TODO: use vendoring
 RUN go get github.com/jessevdk/go-flags \
            github.com/sirupsen/logrus \
-           gopkg.in/yaml.v1
+           gopkg.in/yaml.v1 \
+           k8s.io/client-go/...
 RUN make prometheus-puppetdb
 
 FROM scratch
