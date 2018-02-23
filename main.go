@@ -14,6 +14,11 @@ import (
 	"strings"
 	"time"
 
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+
 	yaml "gopkg.in/yaml.v1"
 
 	log "github.com/sirupsen/logrus"
@@ -35,6 +40,8 @@ type Config struct {
 	Output        string        `short:"o" long:"output" description:"Output. One of stdout, file or configmap" env:"PROMETHEUS_PUPPETDB_OUTPUT" default:"stdout"`
 	Dir           string        `short:"c" long:"config-dir" description:"Prometheus config dir." env:"PROMETHEUS_CONFIG_DIR"`
 	File          string        `short:"f" long:"config-file" description:"Prometheus target file." env:"PROMETHEUS_PUPPETDB_FILE" default:"/etc/prometheus/targets/prometheus-puppetdb/targets.yml"`
+	ConfigMap     string        `long:"configmap" description:"Kubernetes ConfigMap to update." env:"PROMETHEUS_PUPPETDB_CONFIGMAP" default:"prometheus-puppetdb"`
+	NameSpace     string        `long:"namespace" description:"Kubernetes NameSpace to use." env:"PROMETHEUS_PUPPETDB_NAMESPACE" default:"default"`
 	Sleep         time.Duration `short:"s" long:"sleep" description:"Sleep time between queries." env:"PROMETHEUS_PUPPETDB_SLEEP" default:"5s"`
 	Manpage       bool          `short:"m" long:"manpage" description:"Output manpage."`
 }
@@ -283,6 +290,65 @@ func main() {
 			log.Infof("Sleeping for %v", cfg.Sleep)
 			time.Sleep(cfg.Sleep)
 		}
+	}
+	if cfg.Output == "configmap" {
+		// creates the in-cluster config
+		config, err := rest.InClusterConfig()
+		if err != nil {
+			panic(err.Error())
+		}
+		// creates the clientset
+		clientset, err := kubernetes.NewForConfig(config)
+		if err != nil {
+			panic(err.Error())
+		}
 
+		configMap, err := clientset.CoreV1().ConfigMaps(cfg.NameSpace).Get(cfg.ConfigMap, metav1.GetOptions{})
+		if err != nil {
+			configMap = &v1.ConfigMap{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ConfigMap",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: cfg.ConfigMap,
+				},
+				Data: map[string]string{
+					"targets.yml": "",
+				},
+			}
+			configMap, err = clientset.CoreV1().ConfigMaps(cfg.NameSpace).Create(configMap)
+			if err != nil {
+				log.Fatalf("Unable to create ConfigMap: %v", err)
+			}
+		}
+
+		for {
+			c, err := getTargets()
+			if err != nil {
+				log.Errorf("failed to get exporters: %v", err)
+				break
+			}
+
+			configMap := &v1.ConfigMap{
+				TypeMeta: metav1.TypeMeta{
+					Kind:       "ConfigMap",
+					APIVersion: "v1",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: cfg.ConfigMap,
+				},
+				Data: map[string]string{
+					"targets.yml": string(c),
+				},
+			}
+			configMap, err = clientset.CoreV1().ConfigMaps(cfg.NameSpace).Update(configMap)
+			if err != nil {
+				log.Fatalf("Unable to update ConfigMap.")
+			}
+
+			log.Infof("Sleeping for %v", cfg.Sleep)
+			time.Sleep(cfg.Sleep)
+		}
 	}
 }
