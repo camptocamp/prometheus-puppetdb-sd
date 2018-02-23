@@ -10,12 +10,13 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	yaml "gopkg.in/yaml.v1"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/jessevdk/go-flags"
 )
@@ -31,7 +32,9 @@ type Config struct {
 	CACertFile    string        `short:"z" long:"cacert-file" description:"A PEM encoded CA's certificate file." env:"PROMETHEUS_CACERT_FILE" default:"certs/cacert.pem"`
 	SSLSkipVerify bool          `short:"k" long:"ssl-skip-verify" description:"Skip SSL verification." env:"PROMETHEUS_SSL_SKIP_VERIFY"`
 	Query         string        `short:"q" long:"puppetdb-query" description:"PuppetDB query." env:"PROMETHEUS_PUPPETDB_QUERY" default:"facts[certname, value] { name='prometheus_exporters' and nodes { deactivated is null } }"`
-	ConfigDir     string        `short:"c" long:"config-dir" description:"Prometheus config dir." env:"PROMETHEUS_CONFIG_DIR" default:"/etc/prometheus"`
+	Output        string        `short:"o" long:"output" description:"Output. One of stdout, file or configmap" env:"PROMETHEUS_PUPPETDB_OUTPUT" default:"stdout"`
+	Dir           string        `short:"c" long:"config-dir" description:"Prometheus config dir." env:"PROMETHEUS_CONFIG_DIR"`
+	File          string        `short:"f" long:"config-file" description:"Prometheus target file." env:"PROMETHEUS_PUPPETDB_FILE" default:"/etc/prometheus/targets/prometheus-puppetdb/targets.yml"`
 	Sleep         time.Duration `short:"s" long:"sleep" description:"Sleep time between queries." env:"PROMETHEUS_PUPPETDB_SLEEP" default:"5s"`
 	Manpage       bool          `short:"m" long:"manpage" description:"Output manpage."`
 }
@@ -46,38 +49,75 @@ type StaticConfig struct {
 	Labels  map[string]string `yaml:"labels"`
 }
 
+type FileSdConfig struct {
+	Files []string `yaml:"files,omitempty"`
+}
+
+type RelabelConfig struct {
+	SourceLabels []string `yaml:"source_labels,omitempty"`
+	Regex        string   `yaml:"regex,omitempty"`
+	Action       string   `yaml:"action,omitempty"`
+	TargetLabel  string   `yaml:"target_label,omitempty"`
+	Replacement  string   `yaml:"replacement,omitempty"`
+}
+
 type ScrapeConfig struct {
-	JobName       string         `yaml:"job_name,omitempty"`
-	MetricsPath   string         `yaml:"metrics_path,omitempty"`
-	Scheme        string         `yaml:"scheme,omitempty"`
-	StaticConfigs []StaticConfig `yaml:"static_configs,omitempty"`
+	JobName        string          `yaml:"job_name,omitempty"`
+	FileSdConfigs  []FileSdConfig  `yaml:"file_sd_configs,omitempty"`
+	RelabelConfigs []RelabelConfig `yaml:"relabel_configs,omitempty"`
 }
 
 type PrometheusConfig struct {
-	ScrapeConfigs []*ScrapeConfig `yaml:"scrape_configs,omitempty"`
+	ScrapeConfigs []ScrapeConfig `yaml:"scrape_configs,omitempty"`
 }
 
-func (p *PrometheusConfig) addTarget(jobName, metricsPath, scheme, target, certname string) {
-	staticConfig := StaticConfig{
-		Targets: []string{target},
-		Labels:  map[string]string{"certname": certname},
+func writeScrapeConfig() (err error) {
+	prometheusConfig := PrometheusConfig{
+		ScrapeConfigs: []ScrapeConfig{
+			ScrapeConfig{
+				JobName:       "prometheus-puppetdb",
+				FileSdConfigs: []FileSdConfig{FileSdConfig{Files: []string{cfg.File}}},
+				RelabelConfigs: []RelabelConfig{
+					{
+						SourceLabels: []string{"metrics_path"},
+						Regex:        "(.+)",
+						Action:       "replace",
+						TargetLabel:  "__metrics_path__",
+					},
+					{
+						SourceLabels: []string{"scheme"},
+						Regex:        "(.+)",
+						Action:       "replace",
+						TargetLabel:  "__scheme__",
+					},
+					{
+						SourceLabels: []string{"certname"},
+						Regex:        "(.+?)\\.(.+)",
+						Action:       "replace",
+						TargetLabel:  "instance",
+						Replacement:  "${1}",
+					},
+					{
+						Regex:  "^metrics_path$|^scheme$",
+						Action: "labeldrop",
+					},
+				},
+			},
+		},
 	}
 
-	for _, config := range p.ScrapeConfigs {
-		if config.JobName == jobName && config.MetricsPath == metricsPath && config.Scheme == scheme {
-			config.StaticConfigs = append(config.StaticConfigs, staticConfig)
-			return
-		}
+	c, err := yaml.Marshal(&prometheusConfig)
+	if err != nil {
+		return
 	}
 
-	// Not found
-	config := ScrapeConfig{
-		JobName:       jobName,
-		MetricsPath:   metricsPath,
-		Scheme:        scheme,
-		StaticConfigs: []StaticConfig{staticConfig},
+	os.MkdirAll(cfg.Dir, 0755)
+	err = ioutil.WriteFile(fmt.Sprintf("%s/prometheus-puppetdb.yml", cfg.Dir), c, 0644)
+	if err != nil {
+		return
 	}
-	p.ScrapeConfigs = append(p.ScrapeConfigs, &config)
+
+	return
 }
 
 func loadConfig(version string) (c Config, err error) {
@@ -125,30 +165,40 @@ func getNodes(client *http.Client, puppetdb string, query string) (nodes []Node,
 	return
 }
 
-func writeNodes(nodes []Node, dir string) (err error) {
-	prometheusConfig := PrometheusConfig{}
+func getTargets() (c []byte, err error) {
+	fileSdConfig := []StaticConfig{}
+
+	nodes, err := getNodes(client, cfg.PuppetDBURL, cfg.Query)
+	if err != nil {
+		log.Errorf("failed to get nodes: %v", err)
+		return
+	}
 
 	for _, node := range nodes {
 		for jobName, target := range node.Exporters {
 			url, err := url.Parse(target)
 			if err != nil {
-				return err
+				return nil, err
 			}
-			prometheusConfig.addTarget(jobName, url.Path, url.Scheme, url.Host, node.Certname)
+			staticConfig := StaticConfig{
+				Targets: []string{url.Host},
+				Labels: map[string]string{
+					"certname":     node.Certname,
+					"host":         node.Certname,
+					"metrics_path": url.Path,
+					"job":          jobName,
+					"scheme":       url.Scheme,
+				},
+			}
+			fileSdConfig = append(fileSdConfig, staticConfig)
 		}
 	}
-	c, err := yaml.Marshal(&prometheusConfig)
+	c, err = yaml.Marshal(&fileSdConfig)
 	if err != nil {
 		return
 	}
 
-	os.MkdirAll(fmt.Sprintf("%s/conf.d", dir), 0755)
-	err = ioutil.WriteFile(fmt.Sprintf("%s/conf.d/prometheus-puppetdb.yml", dir), c, 0644)
-	if err != nil {
-		return
-	}
-
-	return nil
+	return
 }
 
 var client *http.Client
@@ -202,20 +252,37 @@ func init() {
 }
 
 func main() {
-	for {
-		nodes, err := getNodes(client, cfg.PuppetDBURL, cfg.Query)
+	if cfg.Output == "stdout" {
+		c, err := getTargets()
 		if err != nil {
-			log.Errorf("failed to get nodes: %v", err)
-			break
+			log.Fatalf("failed to get exporters: %v", err)
+		}
+		fmt.Printf(string(c))
+	}
+	if cfg.Output == "file" {
+		if cfg.Dir != "" {
+			err := writeScrapeConfig()
+			if err != nil {
+				log.Errorf("failed to write config file: %v", err)
+				return
+			}
+		}
+		os.MkdirAll(filepath.Dir(cfg.File), 0755)
+		for {
+			c, err := getTargets()
+			if err != nil {
+				log.Errorf("failed to get exporters: %v", err)
+				break
+			}
+
+			err = ioutil.WriteFile(cfg.File, c, 0644)
+			if err != nil {
+				return
+			}
+
+			log.Infof("Sleeping for %v", cfg.Sleep)
+			time.Sleep(cfg.Sleep)
 		}
 
-		err = writeNodes(nodes, cfg.ConfigDir)
-		if err != nil {
-			log.Errorf("failed to write nodes: %v", err)
-			break
-		}
-
-		log.Infof("Sleeping for %v", cfg.Sleep)
-		time.Sleep(cfg.Sleep)
 	}
 }
