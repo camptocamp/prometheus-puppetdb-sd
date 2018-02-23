@@ -32,6 +32,7 @@ type Config struct {
 	CACertFile    string        `short:"z" long:"cacert-file" description:"A PEM encoded CA's certificate file." env:"PROMETHEUS_CACERT_FILE" default:"certs/cacert.pem"`
 	SSLSkipVerify bool          `short:"k" long:"ssl-skip-verify" description:"Skip SSL verification." env:"PROMETHEUS_SSL_SKIP_VERIFY"`
 	Query         string        `short:"q" long:"puppetdb-query" description:"PuppetDB query." env:"PROMETHEUS_PUPPETDB_QUERY" default:"facts[certname, value] { name='prometheus_exporters' and nodes { deactivated is null } }"`
+	Output        string        `short:"o" long:"output" description:"Output. One of stdout, file or configmap" env:"PROMETHEUS_PUPPETDB_OUTPUT" default:"stdout"`
 	Dir           string        `short:"c" long:"config-dir" description:"Prometheus config dir." env:"PROMETHEUS_CONFIG_DIR"`
 	File          string        `short:"f" long:"config-file" description:"Prometheus target file." env:"PROMETHEUS_PUPPETDB_FILE" default:"/etc/prometheus/targets/prometheus-puppetdb/targets.yml"`
 	Sleep         time.Duration `short:"s" long:"sleep" description:"Sleep time between queries." env:"PROMETHEUS_PUPPETDB_SLEEP" default:"5s"`
@@ -164,14 +165,20 @@ func getNodes(client *http.Client, puppetdb string, query string) (nodes []Node,
 	return
 }
 
-func writeNodes(nodes []Node) (err error) {
+func getTargets() (c []byte, err error) {
 	fileSdConfig := []StaticConfig{}
+
+	nodes, err := getNodes(client, cfg.PuppetDBURL, cfg.Query)
+	if err != nil {
+		log.Errorf("failed to get nodes: %v", err)
+		return
+	}
 
 	for _, node := range nodes {
 		for jobName, target := range node.Exporters {
 			url, err := url.Parse(target)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			staticConfig := StaticConfig{
 				Targets: []string{url.Host},
@@ -186,18 +193,12 @@ func writeNodes(nodes []Node) (err error) {
 			fileSdConfig = append(fileSdConfig, staticConfig)
 		}
 	}
-	c, err := yaml.Marshal(&fileSdConfig)
+	c, err = yaml.Marshal(&fileSdConfig)
 	if err != nil {
 		return
 	}
 
-	os.MkdirAll(filepath.Dir(cfg.File), 0755)
-	err = ioutil.WriteFile(cfg.File, c, 0644)
-	if err != nil {
-		return
-	}
-
-	return nil
+	return
 }
 
 var client *http.Client
@@ -251,28 +252,37 @@ func init() {
 }
 
 func main() {
-	for {
-		nodes, err := getNodes(client, cfg.PuppetDBURL, cfg.Query)
+	if cfg.Output == "stdout" {
+		c, err := getTargets()
 		if err != nil {
-			log.Errorf("failed to get nodes: %v", err)
-			break
+			log.Fatalf("failed to get exporters: %v", err)
 		}
-
+		fmt.Printf(string(c))
+	}
+	if cfg.Output == "file" {
 		if cfg.Dir != "" {
-			err = writeScrapeConfig()
+			err := writeScrapeConfig()
 			if err != nil {
 				log.Errorf("failed to write config file: %v", err)
-				break
+				return
 			}
 		}
+		os.MkdirAll(filepath.Dir(cfg.File), 0755)
+		for {
+			c, err := getTargets()
+			if err != nil {
+				log.Errorf("failed to get exporters: %v", err)
+				break
+			}
 
-		err = writeNodes(nodes)
-		if err != nil {
-			log.Errorf("failed to write nodes: %v", err)
-			break
+			err = ioutil.WriteFile(cfg.File, c, 0644)
+			if err != nil {
+				return
+			}
+
+			log.Infof("Sleeping for %v", cfg.Sleep)
+			time.Sleep(cfg.Sleep)
 		}
 
-		log.Infof("Sleeping for %v", cfg.Sleep)
-		time.Sleep(cfg.Sleep)
 	}
 }
