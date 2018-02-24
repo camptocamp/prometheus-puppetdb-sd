@@ -8,7 +8,7 @@ Prometheus-PuppetDB
 [![By Camptocamp](https://img.shields.io/badge/by-camptocamp-fb7047.svg)](http://www.camptocamp.com)
 
 
-Prometheus scape lists based on PuppetDB.
+Prometheus scrape lists based on PuppetDB.
 
 
 ## Installing
