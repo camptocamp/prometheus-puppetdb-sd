@@ -31,7 +31,11 @@ Application Options:
   -z, --cacert-file=    A PEM encoded CA's certificate file. (default: certs/cacert.pem) [$PROMETHEUS_CACERT_FILE]
   -k, --ssl-skip-verify Skip SSL verification.
   -q, --puppetdb-query= PuppetDB query. (default: facts[certname, value] { name='prometheus_exporters' and nodes { deactivated is null } }) [$PROMETHEUS_PUPPETDB_QUERY]
-  -c, --config-dir=     Prometheus config dir. (default: /etc/prometheus) [$PROMETHEUS_CONFIG_DIR]
+  -o, --output=         Output. One of stdout, file or configmap. (default:
+  stdout) [$PROMETHEUS_PUPPETDB_OUTPUT]
+  -f, --config-file     Prometheus target file. (default: /etc/prometheus/targets/prometheus-puppetdb/targets.yml) [$PROMETHEUS_PUPPETDB_FILE]
+  --configmap           Kubernetes ConfigMap to update. (default: prometheus-puppetdb) [$PROMETHEUS_PUPPETDB_CONFIGMAP]
+  --namespace           Kubernetes NameSpace to use. (default: default) [$PROMETHEUS_PUPPETDB_NAMESPACE]
   -s, --sleep=          Sleep time between queries. (default: 5s) [$PROMETHEUS_PUPPETDB_SLEEP]
   -m, --manpage         Output manpage.
 
