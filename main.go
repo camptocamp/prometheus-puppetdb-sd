@@ -38,7 +38,6 @@ type Config struct {
 	SSLSkipVerify bool          `short:"k" long:"ssl-skip-verify" description:"Skip SSL verification." env:"PROMETHEUS_SSL_SKIP_VERIFY"`
 	Query         string        `short:"q" long:"puppetdb-query" description:"PuppetDB query." env:"PROMETHEUS_PUPPETDB_QUERY" default:"facts[certname, value] { name='prometheus_exporters' and nodes { deactivated is null } }"`
 	Output        string        `short:"o" long:"output" description:"Output. One of stdout, file or configmap" env:"PROMETHEUS_PUPPETDB_OUTPUT" default:"stdout"`
-	Dir           string        `short:"c" long:"config-dir" description:"Prometheus config dir." env:"PROMETHEUS_CONFIG_DIR"`
 	File          string        `short:"f" long:"config-file" description:"Prometheus target file." env:"PROMETHEUS_PUPPETDB_FILE" default:"/etc/prometheus/targets/prometheus-puppetdb/targets.yml"`
 	ConfigMap     string        `long:"configmap" description:"Kubernetes ConfigMap to update." env:"PROMETHEUS_PUPPETDB_CONFIGMAP" default:"prometheus-puppetdb"`
 	NameSpace     string        `long:"namespace" description:"Kubernetes NameSpace to use." env:"PROMETHEUS_PUPPETDB_NAMESPACE" default:"default"`
@@ -76,55 +75,6 @@ type ScrapeConfig struct {
 
 type PrometheusConfig struct {
 	ScrapeConfigs []ScrapeConfig `yaml:"scrape_configs,omitempty"`
-}
-
-func writeScrapeConfig() (err error) {
-	prometheusConfig := PrometheusConfig{
-		ScrapeConfigs: []ScrapeConfig{
-			ScrapeConfig{
-				JobName:       "prometheus-puppetdb",
-				FileSdConfigs: []FileSdConfig{FileSdConfig{Files: []string{cfg.File}}},
-				RelabelConfigs: []RelabelConfig{
-					{
-						SourceLabels: []string{"metrics_path"},
-						Regex:        "(.+)",
-						Action:       "replace",
-						TargetLabel:  "__metrics_path__",
-					},
-					{
-						SourceLabels: []string{"scheme"},
-						Regex:        "(.+)",
-						Action:       "replace",
-						TargetLabel:  "__scheme__",
-					},
-					{
-						SourceLabels: []string{"certname"},
-						Regex:        "(.+?)\\.(.+)",
-						Action:       "replace",
-						TargetLabel:  "instance",
-						Replacement:  "${1}",
-					},
-					{
-						Regex:  "^metrics_path$|^scheme$",
-						Action: "labeldrop",
-					},
-				},
-			},
-		},
-	}
-
-	c, err := yaml.Marshal(&prometheusConfig)
-	if err != nil {
-		return
-	}
-
-	os.MkdirAll(cfg.Dir, 0755)
-	err = ioutil.WriteFile(fmt.Sprintf("%s/prometheus-puppetdb.yml", cfg.Dir), c, 0644)
-	if err != nil {
-		return
-	}
-
-	return
 }
 
 func loadConfig(version string) (c Config, err error) {
@@ -267,13 +217,6 @@ func main() {
 		fmt.Printf(string(c))
 	}
 	if cfg.Output == "file" {
-		if cfg.Dir != "" {
-			err := writeScrapeConfig()
-			if err != nil {
-				log.Errorf("failed to write config file: %v", err)
-				return
-			}
-		}
 		os.MkdirAll(filepath.Dir(cfg.File), 0755)
 		for {
 			c, err := getTargets()
