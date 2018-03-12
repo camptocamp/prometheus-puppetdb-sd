@@ -18,4 +18,4 @@ services:
     volumes:
       - prometheus-puppetdb-targets:/etc/prometheus-puppetdb
 volumes:
-  prometheus-puppetdb:
+  prometheus-puppetdb-targets: {}
