@@ -47,10 +47,12 @@ Help Options:
 
 Prometheus-puppetdb looks for a fact in PuppetDB ("prometheus_exporters" by default) to generate the list of targets.
 
-The fact must be a hash using exporters as keys and URIs as values,
+The fact must be a hash using exporters as keys and an array of URIs as values,
 e.g.:
 
-   collectd: http://node.example.com:1234/metrics
+```
+collectd: [http://node.example.com:1234/metrics]
+```
 
 You can populate the fact from Puppet using, for example, the `puppetlabs/concat` module:
 
@@ -72,6 +74,22 @@ Then, in every profile that deploys a Prometheus Exporter:
 ```puppet
 concat::fragment {'prometheus_exporter_collectd':
   target  => '/etc/puppetlabs/facter/facts.d/prometheus_exporters.yaml',
-  content => "  collectd: http://${::fqdn}:9103/metrics\n",
+  content => @("END")
+  collectd:
+    - http://${::fqdn}:9103/metrics
+END
+  ,
+}
+```
+or
+```puppet
+concat::fragment {'prometheus_blackbox_exporter':
+  target  => '/etc/puppetlabs/facter/facts.d/prometheus_exporters.yaml',
+  content => @("END")
+  blackbox:
+    - http://${::ipaddress}:9115/probe?target=foo.example.com&module=dns_tcp
+    - http://${::ipaddress}:9115/probe?target=bar.example.com&module=dns_tcp
+END
+  ,
 }
 ```
