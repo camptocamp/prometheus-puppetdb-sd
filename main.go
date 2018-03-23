@@ -154,7 +154,6 @@ func getTargets() (c []byte, err error) {
 				}
 				labels := map[string]string{
 					"certname":     node.Certname,
-					"host":         node.Certname,
 					"metrics_path": url.Path,
 					"job":          jobName,
 					"scheme":       url.Scheme,
