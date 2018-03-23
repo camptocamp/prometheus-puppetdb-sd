@@ -1,4 +1,4 @@
-.TH prometheus-puppetdb 1 "15 January 2018"
+.TH prometheus-puppetdb 1 "23 March 2018"
 .SH NAME
 prometheus-puppetdb \- Prometheus scrape lists based on PuppetDB
 .SH SYNOPSIS
@@ -15,28 +15,31 @@ Display version.
 PuppetDB base URL.
 .TP
 \fB\fB\-x\fR, \fB\-\-cert-file\fR <default: \fI"certs/client.pem"\fR>\fP
-A PEM eoncoded certificate file.
+A PEM encoded certificate file.
 .TP
 \fB\fB\-y\fR, \fB\-\-key-file\fR <default: \fI"certs/client.key"\fR>\fP
-A PEM eoncoded private key file.
+A PEM encoded private key file.
 .TP
 \fB\fB\-z\fR, \fB\-\-cacert-file\fR <default: \fI"certs/cacert.pem"\fR>\fP
-A PEM eoncoded CA's certificate file.
+A PEM encoded CA's certificate file.
 .TP
 \fB\fB\-k\fR, \fB\-\-ssl-skip-verify\fR <default: \fI$PROMETHEUS_SSL_SKIP_VERIFY\fR>\fP
 Skip SSL verification.
 .TP
-\fB\fB\-q\fR, \fB\-\-puppetdb-query\fR <default: \fI"facts[certname, value] { name='ipaddress' and nodes { deactivated is null } }"\fR>\fP
+\fB\fB\-q\fR, \fB\-\-puppetdb-query\fR <default: \fI"facts[certname, value] { name='prometheus_exporters' and nodes { deactivated is null } }"\fR>\fP
 PuppetDB query.
 .TP
-\fB\fB\-p\fR, \fB\-\-collectd-port\fR <default: \fI"9103"\fR>\fP
-Collectd port.
-.TP
-\fB\fB\-c\fR, \fB\-\-config-dir\fR <default: \fI"/etc/prometheus"\fR>\fP
-Prometheus config dir.
+\fB\fB\-o\fR, \fB\-\-output\fR <default: \fI"stdout"\fR>\fP
+Output. One of stdout, file or configmap
 .TP
 \fB\fB\-f\fR, \fB\-\-config-file\fR <default: \fI"/etc/prometheus/targets/prometheus-puppetdb/targets.yml"\fR>\fP
 Prometheus target file.
+.TP
+\fB\fB\-\-configmap\fR <default: \fI"prometheus-puppetdb"\fR>\fP
+Kubernetes ConfigMap to update.
+.TP
+\fB\fB\-\-namespace\fR <default: \fI"default"\fR>\fP
+Kubernetes NameSpace to use.
 .TP
 \fB\fB\-s\fR, \fB\-\-sleep\fR <default: \fI"5s"\fR>\fP
 Sleep time between queries.
