@@ -160,6 +160,7 @@ func getTargets() (c []byte, err error) {
 				}
 				for k, v := range url.Query() {
 					labels[fmt.Sprintf("__param_%s", k)] = v[0]
+					labels[k] = v[0]
 				}
 				staticConfig := StaticConfig{
 					Targets: []string{url.Host},
