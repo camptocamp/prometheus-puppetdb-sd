@@ -137,15 +137,21 @@ func getTargets() (c []byte, err error) {
 			if err != nil {
 				return nil, err
 			}
+			labels := map[string]string{
+				"certname":     node.Certname,
+				"host":         node.Certname,
+				"metrics_path": url.Path,
+				"job":          jobName,
+				"scheme":       url.Scheme,
+			}
+			for k, v := range url.Query() {
+				for val := range v {
+					labels[fmt.Sprintf("__param_%s", k)] = v[val]
+				}
+			}
 			staticConfig := StaticConfig{
 				Targets: []string{url.Host},
-				Labels: map[string]string{
-					"certname":     node.Certname,
-					"host":         node.Certname,
-					"metrics_path": url.Path,
-					"job":          jobName,
-					"scheme":       url.Scheme,
-				},
+				Labels: labels,
 			}
 			fileSdConfig = append(fileSdConfig, staticConfig)
 		}
