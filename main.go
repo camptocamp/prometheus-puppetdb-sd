@@ -46,8 +46,8 @@ type Config struct {
 }
 
 type Node struct {
-	Certname  string            `json:"certname"`
-	Exporters map[string]string `json:"value"`
+	Certname  string                 `json:"certname"`
+	Exporters map[string]interface{} `json:"value"`
 }
 
 type StaticConfig struct {
@@ -132,26 +132,42 @@ func getTargets() (c []byte, err error) {
 	}
 
 	for _, node := range nodes {
-		for jobName, target := range node.Exporters {
-			url, err := url.Parse(target)
-			if err != nil {
-				return nil, err
+		for jobName, targets := range node.Exporters {
+			var t []string
+
+			switch v := targets.(type) {
+			case string:
+				t = []string{v}
+			case []interface{}:
+				t = make([]string, len(v))
+				for i := range v {
+					t[i] = v[i].(string)
+				}
+			default:
+				log.Errorf("failed to determine kind of targets: %v", err)
 			}
-			labels := map[string]string{
-				"certname":     node.Certname,
-				"host":         node.Certname,
-				"metrics_path": url.Path,
-				"job":          jobName,
-				"scheme":       url.Scheme,
+
+			for i := range t {
+				url, err := url.Parse(t[i])
+				if err != nil {
+					return nil, err
+				}
+				labels := map[string]string{
+					"certname":     node.Certname,
+					"host":         node.Certname,
+					"metrics_path": url.Path,
+					"job":          jobName,
+					"scheme":       url.Scheme,
+				}
+				for k, v := range url.Query() {
+					labels[fmt.Sprintf("__param_%s", k)] = v[0]
+				}
+				staticConfig := StaticConfig{
+					Targets: []string{url.Host},
+					Labels: labels,
+				}
+				fileSdConfig = append(fileSdConfig, staticConfig)
 			}
-			for k, v := range url.Query() {
-				labels[fmt.Sprintf("__param_%s", k)] = v[0]
-			}
-			staticConfig := StaticConfig{
-				Targets: []string{url.Host},
-				Labels: labels,
-			}
-			fileSdConfig = append(fileSdConfig, staticConfig)
 		}
 	}
 	c, err = yaml.Marshal(&fileSdConfig)
