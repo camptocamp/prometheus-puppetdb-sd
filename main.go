@@ -137,6 +137,7 @@ func getTargets() (c []byte, err error) {
 
 			switch v := targets.(type) {
 			case string:
+				log.Warningf("Deprecated: target should be an Array not a String: %v", v)
 				t = []string{v}
 			case []interface{}:
 				t = make([]string, len(v))
