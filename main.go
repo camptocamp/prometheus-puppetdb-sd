@@ -164,7 +164,7 @@ func getTargets() (c []byte, err error) {
 				}
 				staticConfig := StaticConfig{
 					Targets: []string{url.Host},
-					Labels: labels,
+					Labels:  labels,
 				}
 				fileSdConfig = append(fileSdConfig, staticConfig)
 			}
