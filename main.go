@@ -46,8 +46,8 @@ type Config struct {
 }
 
 type Node struct {
-	Certname  string                 `json:"certname"`
-	Exporters map[string]interface{} `json:"value"`
+	Certname  string              `json:"certname"`
+	Exporters map[string][]string `json:"value"`
 }
 
 type StaticConfig struct {
@@ -133,23 +133,8 @@ func getTargets() (c []byte, err error) {
 
 	for _, node := range nodes {
 		for jobName, targets := range node.Exporters {
-			var t []string
-
-			switch v := targets.(type) {
-			case string:
-				log.Warningf("Deprecated: target should be an Array not a String: %v", v)
-				t = []string{v}
-			case []interface{}:
-				t = make([]string, len(v))
-				for i := range v {
-					t[i] = v[i].(string)
-				}
-			default:
-				log.Errorf("failed to determine kind of targets: %v", err)
-			}
-
-			for i := range t {
-				url, err := url.Parse(t[i])
+			for i := range targets {
+				url, err := url.Parse(targets[i])
 				if err != nil {
 					return nil, err
 				}
