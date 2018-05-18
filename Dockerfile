@@ -1,11 +1,8 @@
 FROM golang:1.9 as builder
 WORKDIR /go/src/github.com/camptocamp/prometheus-puppetdb
 COPY . .
-# TODO: use vendoring
-RUN go get github.com/jessevdk/go-flags \
-           github.com/sirupsen/logrus \
-           gopkg.in/yaml.v1 \
-           k8s.io/client-go/...
+RUN go get -u github.com/golang/dep/cmd/dep
+RUN dep ensure -vendor-only
 RUN make prometheus-puppetdb
 
 FROM scratch
