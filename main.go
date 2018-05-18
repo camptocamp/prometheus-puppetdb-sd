@@ -18,6 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 
 	yaml "gopkg.in/yaml.v1"
 
@@ -267,7 +268,18 @@ func main() {
 			panic(err.Error())
 		}
 
-		configMap, err := clientset.CoreV1().ConfigMaps(cfg.NameSpace).Get(cfg.ConfigMap, metav1.GetOptions{})
+		// get the namespace
+		kubeconfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+			clientcmd.NewDefaultClientConfigLoadingRules(),
+			&clientcmd.ConfigOverrides{},
+		)
+		namespace, _, err := kubeconfig.Namespace()
+		if err == nil {
+			log.Warn("Unable to get the namespace, get it from configuration")
+			namespace = cfg.NameSpace
+		}
+
+		configMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(cfg.ConfigMap, metav1.GetOptions{})
 		if err != nil {
 			configMap = &v1.ConfigMap{
 				TypeMeta: metav1.TypeMeta{
@@ -281,7 +293,7 @@ func main() {
 					"targets.yml": "",
 				},
 			}
-			configMap, err = clientset.CoreV1().ConfigMaps(cfg.NameSpace).Create(configMap)
+			configMap, err = clientset.CoreV1().ConfigMaps(namespace).Create(configMap)
 			if err != nil {
 				log.Fatalf("Unable to create ConfigMap: %v", err)
 			}
@@ -306,7 +318,7 @@ func main() {
 					"targets.yml": string(c),
 				},
 			}
-			configMap, err = clientset.CoreV1().ConfigMaps(cfg.NameSpace).Update(configMap)
+			configMap, err = clientset.CoreV1().ConfigMaps(namespace).Update(configMap)
 			if err != nil {
 				log.Fatalf("Unable to update ConfigMap.")
 			}
