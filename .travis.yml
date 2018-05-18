@@ -3,6 +3,7 @@ sudo: required
 services: docker
 go:
 - "1.10"
+- "1.9"
 install:
 - go get github.com/bradfitz/goimports
 - go get github.com/mattn/goveralls
@@ -11,9 +12,7 @@ install:
 - dep ensure -vendor-only
 script:
 - make
-- "./.travis/build.sh && ./.travis/test.sh && ./.travis/publish.sh"
-- make coverage
-- "$HOME/gopath/bin/goveralls -service=travis-ci -coverprofile=coverage.out"
+- "./.travis/build.sh && ./.travis/publish.sh"
 deploy:
   provider: releases
   api_key:
