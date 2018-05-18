@@ -30,6 +30,7 @@ import (
 var version = "undefined"
 var transport *http.Transport
 
+// Config stores handler's configuration
 type Config struct {
 	Version       bool          `short:"V" long:"version" description:"Display version."`
 	PuppetDBURL   string        `short:"u" long:"puppetdb-url" description:"PuppetDB base URL." env:"PROMETHEUS_PUPPETDB_URL" default:"http://puppetdb:8080"`
@@ -46,36 +47,16 @@ type Config struct {
 	Manpage       bool          `short:"m" long:"manpage" description:"Output manpage."`
 }
 
+// Node contains Puppet node informations
 type Node struct {
 	Certname  string                 `json:"certname"`
 	Exporters map[string]interface{} `json:"value"`
 }
 
+// StaticConfig contains Prometheus static targets
 type StaticConfig struct {
 	Targets []string          `yaml:"targets"`
 	Labels  map[string]string `yaml:"labels"`
-}
-
-type FileSdConfig struct {
-	Files []string `yaml:"files,omitempty"`
-}
-
-type RelabelConfig struct {
-	SourceLabels []string `yaml:"source_labels,omitempty"`
-	Regex        string   `yaml:"regex,omitempty"`
-	Action       string   `yaml:"action,omitempty"`
-	TargetLabel  string   `yaml:"target_label,omitempty"`
-	Replacement  string   `yaml:"replacement,omitempty"`
-}
-
-type ScrapeConfig struct {
-	JobName        string          `yaml:"job_name,omitempty"`
-	FileSdConfigs  []FileSdConfig  `yaml:"file_sd_configs,omitempty"`
-	RelabelConfigs []RelabelConfig `yaml:"relabel_configs,omitempty"`
-}
-
-type PrometheusConfig struct {
-	ScrapeConfigs []ScrapeConfig `yaml:"scrape_configs,omitempty"`
 }
 
 func loadConfig(version string) (c Config, err error) {
@@ -94,7 +75,7 @@ func loadConfig(version string) (c Config, err error) {
 		var buf bytes.Buffer
 		parser.ShortDescription = "Prometheus scrape lists based on PuppetDB"
 		parser.WriteManPage(&buf)
-		fmt.Printf(buf.String())
+		fmt.Printf("%s", buf.String())
 		os.Exit(0)
 	}
 	return
@@ -236,7 +217,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("failed to get exporters: %v", err)
 		}
-		fmt.Printf(string(c))
+		fmt.Printf("%s", string(c))
 	}
 	if cfg.Output == "file" {
 		os.MkdirAll(filepath.Dir(cfg.File), 0755)
