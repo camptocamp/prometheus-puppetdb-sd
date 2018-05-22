@@ -259,9 +259,10 @@ func main() {
 			&clientcmd.ConfigOverrides{},
 		)
 		namespace, _, err := kubeconfig.Namespace()
-		if err == nil {
-			log.Warn("Unable to get the namespace, get it from configuration")
+		if err != nil {
+			log.Errorf("Failed to get namespace: %v", err)
 			namespace = cfg.NameSpace
+			log.Warnf("Get namespace from configuration: %s", namespace)
 		}
 
 		configMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(cfg.ConfigMap, metav1.GetOptions{})
