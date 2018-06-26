@@ -47,11 +47,11 @@ Help Options:
 
 Prometheus-puppetdb looks for a fact in PuppetDB ("prometheus_exporters" by default) to generate the list of targets.
 
-The fact must be a hash using exporters as keys and an array of URIs as values,
+The fact must be a hash using exporters as keys and, as value, a hash which contains the target URL and a hash of labels,
 e.g.:
 
 ```
-collectd: [http://node.example.com:1234/metrics]
+collectd: [{url: http://node.example.com:1234/metrics, labels:{role: foo}}]
 ```
 
 You can populate the fact from Puppet using, for example, the `puppetlabs/concat` module:
