@@ -76,7 +76,9 @@ concat::fragment {'prometheus_exporter_collectd':
   target  => '/etc/puppetlabs/facter/facts.d/prometheus_exporters.yaml',
   content => @("END")
   collectd:
-    - http://${::fqdn}:9103/metrics
+    - url: http://${::fqdn}:9103/metrics
+      labels:
+        role: ${::role}
 END
   ,
 }
@@ -87,8 +89,10 @@ concat::fragment {'prometheus_blackbox_exporter':
   target  => '/etc/puppetlabs/facter/facts.d/prometheus_exporters.yaml',
   content => @("END")
   blackbox:
-    - http://${::ipaddress}:9115/probe?target=foo.example.com&module=dns_tcp
-    - http://${::ipaddress}:9115/probe?target=bar.example.com&module=dns_tcp
+    - url: http://${::ipaddress}:9115/probe?target=foo.example.com&module=dns_tcp
+      labels:
+        role: ${::role}
+    - url: http://${::ipaddress}:9115/probe?target=bar.example.com&module=dns_tcp
 END
   ,
 }
