@@ -47,10 +47,16 @@ type Config struct {
 	Manpage       bool          `short:"m" long:"manpage" description:"Output manpage."`
 }
 
+// Exporter contains exporter targets and labels
+type Exporter struct {
+	URL    string
+	Labels map[string]string
+}
+
 // Node contains Puppet node informations
 type Node struct {
-	Certname  string              `json:"certname"`
-	Exporters map[string][]string `json:"value"`
+	Certname  string                 `json:"certname"`
+	Exporters map[string]interface{} `json:"value"`
 }
 
 // StaticConfig contains Prometheus static targets
@@ -115,11 +121,20 @@ func getTargets() (c []byte, err error) {
 
 	for _, node := range nodes {
 		for jobName, targets := range node.Exporters {
-			for i := range targets {
-				url, err := url.Parse(targets[i])
+
+			// TODO: Remove backward compatibility
+			t, err := extractTargets(targets)
+			if err != nil {
+				log.Errorf("failed to extract targets: %s", err)
+				return nil, err
+			}
+
+			for _, vt := range t {
+				url, err := url.Parse(vt.URL)
 				if err != nil {
 					return nil, err
 				}
+
 				labels := map[string]string{
 					"certname":     node.Certname,
 					"metrics_path": url.Path,
@@ -129,6 +144,9 @@ func getTargets() (c []byte, err error) {
 				for k, v := range url.Query() {
 					labels[fmt.Sprintf("__param_%s", k)] = v[0]
 					labels[k] = v[0]
+				}
+				for k, v := range vt.Labels {
+					labels[k] = v
 				}
 				staticConfig := StaticConfig{
 					Targets: []string{url.Host},
@@ -143,6 +161,47 @@ func getTargets() (c []byte, err error) {
 		return
 	}
 
+	return
+}
+
+// Allow backward compatibility (to remove)
+func extractTargets(targets interface{}) (t []Exporter, err error) {
+	switch v := targets.(type) {
+	case string:
+		log.Warningf("Deprecated: target should be a struct Exporter, not a String: %v", v)
+		e := Exporter{
+			URL:    v,
+			Labels: make(map[string]string),
+		}
+		t = []Exporter{e}
+	case []interface{}:
+		switch v[0].(type) {
+		case string:
+			log.Warningf("Deprecated: target should be a struct Exporter, not an Array of Strings: %v", v)
+			t = make([]Exporter, len(v))
+			for i := range v {
+				t[i] = Exporter{
+					URL:    v[i].(string),
+					Labels: make(map[string]string),
+				}
+			}
+		case map[string]interface{}:
+			t = make([]Exporter, len(v))
+			for i := range v {
+				a := v[i].(map[string]interface{})
+				t[i] = Exporter{
+					URL:    a["url"].(string),
+					Labels: make(map[string]string),
+				}
+				for lk, lv := range a["labels"].(map[string]interface{}) {
+					t[i].Labels[lk] = lv.(string)
+				}
+
+			}
+		}
+	default:
+		err = fmt.Errorf("failed to determine target type: %v", v)
+	}
 	return
 }
 
