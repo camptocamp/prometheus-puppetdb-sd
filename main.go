@@ -45,14 +45,18 @@ type Config struct {
 	NameSpace     string        `long:"namespace" description:"Kubernetes NameSpace to use." env:"PROMETHEUS_PUPPETDB_NAMESPACE" default:"default"`
 	Sleep         time.Duration `short:"s" long:"sleep" description:"Sleep time between queries." env:"PROMETHEUS_PUPPETDB_SLEEP" default:"5s"`
 	Manpage       bool          `short:"m" long:"manpage" description:"Output manpage."`
-	CustomLabels  string        `long:"custom-labels" description:"Add custom labels from facts." env:"PROMETHEUS_PUPPETDB_LABELS" default:"facts[certname, name, value] { (name='role_role') and nodes { deactivated is null } }"`
+}
+
+// Exporter contains exporter targets and labels
+type Exporter struct {
+	URL    string
+	Labels map[string]string
 }
 
 // Node contains Puppet node informations
 type Node struct {
-	Certname  string              `json:"certname"`
-	Exporters map[string][]string `json:"value"`
-	Labels    map[string]string
+	Certname  string                 `json:"certname"`
+	Exporters map[string]interface{} `json:"value"`
 }
 
 // StaticConfig contains Prometheus static targets
@@ -83,40 +87,6 @@ func loadConfig(version string) (c Config, err error) {
 	return
 }
 
-func getLabels(client *http.Client, puppetdb string, query string, nodes *[]Node) (err error) {
-	form := strings.NewReader(fmt.Sprintf("{\"query\":\"%s\"}", query))
-	puppetdbURL := fmt.Sprintf("%s/pdb/query/v4", puppetdb)
-	req, err := http.NewRequest("POST", puppetdbURL, form)
-	if err != nil {
-		return
-	}
-	req.Header.Add("Content-Type", "application/json")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return
-	}
-
-	var rf []map[string]string
-	err = json.Unmarshal(body, &rf)
-
-	for _, fv := range rf {
-		for nk, nv := range *nodes {
-			if fv["certname"] == nv.Certname {
-				if (*nodes)[nk].Labels == nil {
-					(*nodes)[nk].Labels = make(map[string]string)
-				}
-				(*nodes)[nk].Labels[fv["name"]] = fv["value"]
-			}
-		}
-	}
-	return
-}
 func getNodes(client *http.Client, puppetdb string, query string) (nodes []Node, err error) {
 	form := strings.NewReader(fmt.Sprintf("{\"query\":\"%s\"}", query))
 	puppetdbURL := fmt.Sprintf("%s/pdb/query/v4", puppetdb)
@@ -149,18 +119,18 @@ func getTargets() (c []byte, err error) {
 		return
 	}
 
-	if cfg.CustomLabels != "" {
-		err = getLabels(client, cfg.PuppetDBURL, cfg.CustomLabels, &nodes)
-		if err != nil {
-			log.Errorf("failed to get custom labels: %v", err)
-			return
-		}
-	}
-
 	for _, node := range nodes {
 		for jobName, targets := range node.Exporters {
-			for i := range targets {
-				url, err := url.Parse(targets[i])
+
+			// TODO: Remove backward compatibility
+			t, err := extractTargets(targets)
+			if err != nil {
+				log.Errorf("failed to extract targets: %s", err)
+				return nil, err
+			}
+
+			for _, vt := range t {
+				url, err := url.Parse(vt.URL)
 				if err != nil {
 					return nil, err
 				}
@@ -175,7 +145,7 @@ func getTargets() (c []byte, err error) {
 					labels[fmt.Sprintf("__param_%s", k)] = v[0]
 					labels[k] = v[0]
 				}
-				for k, v := range node.Labels {
+				for k, v := range vt.Labels {
 					labels[k] = v
 				}
 				staticConfig := StaticConfig{
@@ -191,6 +161,47 @@ func getTargets() (c []byte, err error) {
 		return
 	}
 
+	return
+}
+
+// Allow backward compatibility (to remove)
+func extractTargets(targets interface{}) (t []Exporter, err error) {
+	switch v := targets.(type) {
+	case string:
+		log.Warningf("Deprecated: target should be a struct Exporter, not a String: %v", v)
+		e := Exporter{
+			URL:    v,
+			Labels: make(map[string]string),
+		}
+		t = []Exporter{e}
+	case []interface{}:
+		switch v[0].(type) {
+		case string:
+			log.Warningf("Deprecated: target should be a struct Exporter, not an Array of Strings: %v", v)
+			t = make([]Exporter, len(v))
+			for i := range v {
+				t[i] = Exporter{
+					URL:    v[i].(string),
+					Labels: make(map[string]string),
+				}
+			}
+		case map[string]interface{}:
+			t = make([]Exporter, len(v))
+			for i := range v {
+				a := v[i].(map[string]interface{})
+				t[i] = Exporter{
+					URL:    a["url"].(string),
+					Labels: make(map[string]string),
+				}
+				for lk, lv := range a["labels"].(map[string]interface{}) {
+					t[i].Labels[lk] = lv.(string)
+				}
+
+			}
+		}
+	default:
+		err = fmt.Errorf("failed to determine target type: %v", v)
+	}
 	return
 }
 
