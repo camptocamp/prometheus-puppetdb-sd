@@ -4,7 +4,7 @@
 
 image:
   repository: camptocamp/prometheus-puppetdb
-  tag: 0.8.0
+  tag: 0.9.0
   pullPolicy: Always
 
 resources: {}
@@ -24,6 +24,11 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+prometheusPuppetdb:
+  Extraconfigmapmounts: []
+  extraSecretMounts: []
+
 
 prometheus:
   initChownData:
