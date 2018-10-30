@@ -193,10 +193,11 @@ func extractTargets(targets interface{}) (t []Exporter, err error) {
 					URL:    a["url"].(string),
 					Labels: make(map[string]string),
 				}
-				for lk, lv := range a["labels"].(map[string]interface{}) {
-					t[i].Labels[lk] = lv.(string)
+				if a["labels"] != nil {
+					for lk, lv := range a["labels"].(map[string]interface{}) {
+						t[i].Labels[lk] = lv.(string)
+					}
 				}
-
 			}
 		}
 	default:
