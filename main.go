@@ -115,7 +115,7 @@ func getTargets() (c []byte, err error) {
 
 	nodes, err := getNodes(client, cfg.PuppetDBURL, cfg.Query)
 	if err != nil {
-		log.Errorf("failed to get nodes: %v", err)
+		err = fmt.Errorf("failed to get nodes: %v", err)
 		return
 	}
 
@@ -125,7 +125,7 @@ func getTargets() (c []byte, err error) {
 			// TODO: Remove backward compatibility
 			t, err := extractTargets(targets)
 			if err != nil {
-				log.Errorf("failed to extract targets: %s", err)
+				err = fmt.Errorf("failed to extract targets: %s", err)
 				return nil, err
 			}
 
@@ -330,7 +330,6 @@ func main() {
 			c, err := getTargets()
 			if err != nil {
 				log.Errorf("failed to get exporters: %v", err)
-				break
 			}
 
 			configMap := &v1.ConfigMap{
