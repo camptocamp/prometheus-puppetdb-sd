@@ -330,7 +330,9 @@ func main() {
 			c, err := getTargets()
 			if err != nil {
 				log.Errorf("failed to get exporters: %v", err)
-				break
+				log.Infof("Sleeping for %v", cfg.Sleep)
+				time.Sleep(cfg.Sleep)
+				continue
 			}
 
 			configMap := &v1.ConfigMap{
