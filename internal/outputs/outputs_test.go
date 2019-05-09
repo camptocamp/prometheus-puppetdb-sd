@@ -7,9 +7,8 @@ import (
 )
 
 func TestSetup(t *testing.T) {
-	o, err := Setup(&Options{
+	_, err := Setup(&Options{
 		Name: "stdout",
 	})
 	assert.Nil(t, err)
-	assert.Equal(t, "stdout", o.GetName())
 }
