@@ -10,17 +10,17 @@ install:
   - go get github.com/golang/dep/cmd/dep
   - dep ensure -vendor-only
 script:
+  - tests
   - build-binary
   - build-docker-image
-  - coverage
 jobs:
   include:
-    - stage: build-binary
-      script: make
-    - stage: build-docker-image
-      script: docker build .
-    - stage: coverage
+    - stage: tests
       if: repo = camptocamp/prometheus-puppetdb
       script:
         - make test
         - "$HOME/gopath/bin/goveralls -service=travis-ci -coverprofile=coverage"
+    - stage: build-binary
+      script: make
+    - stage: build-docker-image
+      script: docker build .
