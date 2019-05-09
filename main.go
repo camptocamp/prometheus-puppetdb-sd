@@ -10,21 +10,13 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
-
-	yaml "gopkg.in/yaml.v1"
-
+	"github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/jessevdk/go-flags"
+	"github.com/camptocamp/prometheus-puppetdb/internal/outputs"
 )
 
 var version = "undefined"
@@ -110,8 +102,8 @@ func getNodes(client *http.Client, puppetdb string, query string) (nodes []Node,
 	return
 }
 
-func getTargets() (c []byte, err error) {
-	fileSdConfig := []StaticConfig{}
+func getTargets() (staticConfigs []StaticConfig, err error) {
+	staticConfigs = []StaticConfig{}
 
 	nodes, err := getNodes(client, cfg.PuppetDBURL, cfg.Query)
 	if err != nil {
@@ -152,14 +144,16 @@ func getTargets() (c []byte, err error) {
 					Targets: []string{url.Host},
 					Labels:  labels,
 				}
-				fileSdConfig = append(fileSdConfig, staticConfig)
+				staticConfigs = append(staticConfigs, staticConfig)
 			}
 		}
 	}
-	c, err = yaml.Marshal(&fileSdConfig)
-	if err != nil {
-		return
-	}
+	/*
+		c, err = yaml.Marshal(&fileSdConfig)
+		if err != nil {
+			return
+		}
+	*/
 
 	return
 }
@@ -257,103 +251,28 @@ func init() {
 }
 
 func main() {
-	if cfg.Output == "stdout" {
-		c, err := getTargets()
-		if err != nil {
-			log.Fatalf("failed to get exporters: %v", err)
-		}
-		fmt.Printf("%s", string(c))
+	o, err := outputs.Setup(&outputs.Options{
+		Name:     cfg.Output,
+		FilePath: cfg.File,
+	})
+	if err != nil {
+		log.Fatalf("failed to setup output: %s", err)
+		return
 	}
-	if cfg.Output == "file" {
-		os.MkdirAll(filepath.Dir(cfg.File), 0755)
-		for {
-			c, err := getTargets()
-			if err != nil {
-				log.Errorf("failed to get exporters: %v", err)
-				break
-			}
 
-			err = ioutil.WriteFile(cfg.File, c, 0644)
-			if err != nil {
-				return
-			}
-
-			log.Infof("Sleeping for %v", cfg.Sleep)
-			time.Sleep(cfg.Sleep)
-		}
-	}
-	if cfg.Output == "configmap" {
-		// creates the in-cluster config
-		config, err := rest.InClusterConfig()
+	for {
+		targets, err := getTargets()
 		if err != nil {
-			panic(err.Error())
+			log.Errorf("failed to retrieve exporters: %s", err)
+			continue
 		}
-		// creates the clientset
-		clientset, err := kubernetes.NewForConfig(config)
+		err = o.WriteOutput(targets)
 		if err != nil {
-			panic(err.Error())
+			log.Errorf("failed to write output: %s", err)
+			continue
 		}
 
-		// get the namespace
-		kubeconfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
-			clientcmd.NewDefaultClientConfigLoadingRules(),
-			&clientcmd.ConfigOverrides{},
-		)
-		namespace, _, err := kubeconfig.Namespace()
-		if err != nil {
-			log.Errorf("Failed to get namespace: %v", err)
-			namespace = cfg.NameSpace
-			log.Warnf("Get namespace from configuration: %s", namespace)
-		}
-
-		configMap, err := clientset.CoreV1().ConfigMaps(namespace).Get(cfg.ConfigMap, metav1.GetOptions{})
-		if err != nil {
-			configMap = &v1.ConfigMap{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "ConfigMap",
-					APIVersion: "v1",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name: cfg.ConfigMap,
-				},
-				Data: map[string]string{
-					"targets.yml": "",
-				},
-			}
-			configMap, err = clientset.CoreV1().ConfigMaps(namespace).Create(configMap)
-			if err != nil {
-				log.Fatalf("Unable to create ConfigMap: %v", err)
-			}
-		}
-
-		for {
-			c, err := getTargets()
-			if err != nil {
-				log.Errorf("failed to get exporters: %v", err)
-				log.Infof("Sleeping for %v", cfg.Sleep)
-				time.Sleep(cfg.Sleep)
-				continue
-			}
-
-			configMap := &v1.ConfigMap{
-				TypeMeta: metav1.TypeMeta{
-					Kind:       "ConfigMap",
-					APIVersion: "v1",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name: cfg.ConfigMap,
-				},
-				Data: map[string]string{
-					"targets.yml": string(c),
-				},
-			}
-			configMap, err = clientset.CoreV1().ConfigMaps(namespace).Update(configMap)
-			if err != nil {
-				log.Fatalf("Unable to update ConfigMap.")
-			}
-
-			log.Infof("Sleeping for %v", cfg.Sleep)
-			time.Sleep(cfg.Sleep)
-		}
+		log.Infof("Sleeping for %v", cfg.Sleep)
+		time.Sleep(cfg.Sleep)
 	}
 }
