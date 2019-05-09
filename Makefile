@@ -1,11 +1,11 @@
 DEPS = $(wildcard */*/*/*.go)
 VERSION = $(shell git describe --always --dirty)
 
-all: imports lint vet test prometheus-puppetdb prometheus-puppetdb.1
+all: lint vet test prometheus-puppetdb prometheus-puppetdb.1
 
 prometheus-puppetdb: main.go $(DEPS)
-	GO111MODULE=off CGO_ENABLED=0 GOOS=linux \
-	  go build -a \
+	GO111MODULE=on CGO_ENABLED=0 GOOS=linux \
+	  go build -mod=vendor -a \
 		  -ldflags="-X main.version=$(VERSION)" \
 	    -installsuffix cgo -o $@ $<
 	strip $@
@@ -18,7 +18,7 @@ clean:
 
 lint:
 	@ go get -v golang.org/x/lint/golint
-	@for file in $$(git ls-files '*.go' | grep -v '_workspace/'); do \
+	@for file in $$(go list ./... | grep -v '_workspace/' | grep -v 'vendor'); do \
 		export output="$$(golint $${file} | grep -v 'type name will be used as docker.DockerInfo')"; \
 		[ -n "$${output}" ] && echo "$${output}" && export status=1; \
 	done; \
@@ -27,9 +27,8 @@ lint:
 vet: main.go
 	go vet $<
 
-imports: main.go
-	dep ensure -vendor-only
-	goimports -d $<
+vendor:
+	go mod vendor
 
 test:
 	go test -cover -coverprofile=coverage -v ./...

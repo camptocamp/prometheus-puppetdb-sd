@@ -1,8 +1,6 @@
-FROM golang:1.9 as builder
+FROM golang:1.11 as builder
 WORKDIR /go/src/github.com/camptocamp/prometheus-puppetdb
 COPY . .
-RUN go get -u github.com/golang/dep/cmd/dep
-RUN dep ensure -vendor-only
 RUN make prometheus-puppetdb
 
 FROM scratch
