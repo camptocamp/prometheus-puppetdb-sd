@@ -2,24 +2,25 @@ language: go
 sudo: required
 services: docker
 go:
-- "1.10"
-- "1.9"
+  - "1.11"
 install:
-- go get github.com/bradfitz/goimports
-- go get github.com/mattn/goveralls
-- go get golang.org/x/tools/cmd/cover
-- go get github.com/golang/dep/cmd/dep
-- dep ensure -vendor-only
+  - go get github.com/bradfitz/goimports
+  - go get github.com/mattn/goveralls
+  - go get golang.org/x/tools/cmd/cover
+  - go get github.com/golang/dep/cmd/dep
+  - dep ensure -vendor-only
 script:
-- make
-- "./.travis/build.sh && ./.travis/publish.sh"
-deploy:
-  provider: releases
-  api_key:
-    secure: 1MN30SZsNeP50XrGJpIjrg/3fNza/YCVTo6i0j3wf4SX4BWiT5duc66BSpdb94/98yoYddItSKKsjeRAv5gUel/00TD2/5eoOrggXH+Leqq6MlHySfSA3yoHOCN6tIgDCd7/rRwmRQZM/90cThfOqz+7pzF8gCgAfE/cFJNRVz287Uom9RdrB26BMAKlmt5A0yarnqgaeTA40YFxyA0smODErz8+VgJhc0i9BJEIX6VyMFJswstTdbSS4gVlAwYg70gN3ehOTng23CE+l6D7f6HNHv86hnmYOMsmy2Ta9zwSJVpY3JitdlDlYiLEbX9vg9LCbqmnO35r8diRFk6k7IAhN7/AIgqBUe1VSLgLH/e6/ZND9TSIwFdSNT3F/dEMibHVYrqUwBiMnR2/TtZ1jPshhtzqqze8MZsBbzT1zieIzryCi31jihGhKdxq0ag0x7R7oxBdAqgjYL/ybus+NlqCgBAr2hk23ywwqVUZYoZuzRhI2v5ovWGsyBI26Nkt3lAN335wPSrDzHwq0LFLvfo60QTSM9qiLJ3YoDQxi0H+6Sxy1jiXsstJNfFWYOt2aSO8SYdyUAjQME6DF9RCSKg4qh/QmcgpvMmqRis0bADvBJUE/xaxg2oycbaGkYCBGVUKXDYOmDeEdwV7oWcsgypsJY/yJLHQKdmIZ1L4OSk=
-  file:
-  - prometheus-puppetdb
-  - prometheus-puppetdb.1
-  on:
-    repo: camptocamp/prometheus-puppetdb
-    tags: true
+  - build-binary
+  - build-docker-image
+  - coverage
+jobs:
+  include:
+    - stage: build-binary
+      script: make
+    - stage: build-docker-image
+      script: docker build .
+    - stage: coverage
+      if: repo = camptocamp/prometheus-puppetdb
+      script:
+        - make test
+        - "$HOME/gopath/bin/goveralls -service=travis-ci -coverprofile=coverage"

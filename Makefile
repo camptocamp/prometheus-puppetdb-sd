@@ -1,10 +1,10 @@
-DEPS = $(wildcard */*.go)
+DEPS = $(wildcard */*/*/*.go)
 VERSION = $(shell git describe --always --dirty)
 
-all: imports lint vet prometheus-puppetdb prometheus-puppetdb.1
+all: imports lint vet test prometheus-puppetdb prometheus-puppetdb.1
 
 prometheus-puppetdb: main.go $(DEPS)
-	CGO_ENABLED=0 GOOS=linux \
+	GO111MODULE=off CGO_ENABLED=0 GOOS=linux \
 	  go build -a \
 		  -ldflags="-X main.version=$(VERSION)" \
 	    -installsuffix cgo -o $@ $<
@@ -31,4 +31,7 @@ imports: main.go
 	dep ensure -vendor-only
 	goimports -d $<
 
-.PHONY: all lint clean
+test:
+	go test -cover -coverprofile=coverage -v ./...
+
+.PHONY: all lint clean test
