@@ -16,7 +16,7 @@ type OutputK8SConfigMap struct {
 	namespace     string
 	configMapName string
 
-	k8sClient *kubernetes.Clientset
+	k8sClient kubernetes.Interface
 }
 
 func setupOutputK8SConfigMap(namespace, configMapName string) (*OutputK8SConfigMap, error) {
