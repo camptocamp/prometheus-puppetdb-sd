@@ -7,12 +7,22 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/camptocamp/prometheus-puppetdb/internal/types"
 )
 
 func TestStdoutWriteOutputSuccess(t *testing.T) {
-	data := map[string]string{
-		"foo": "bar",
+	data := []types.StaticConfig{
+		{
+			Targets: []string{
+				"127.0.0.1:9103",
+			},
+			Labels: map[string]string{
+				"foo": "bar",
+			},
+		},
 	}
+
 	o := &OutputStdout{}
 
 	old := os.Stdout
@@ -33,5 +43,5 @@ func TestStdoutWriteOutputSuccess(t *testing.T) {
 	out := <-outC
 
 	assert.Nil(t, err)
-	assert.Equal(t, "foo: bar\n", out)
+	assert.Equal(t, "- targets:\n  - 127.0.0.1:9103\n  labels:\n    foo: bar\n", out)
 }

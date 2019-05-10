@@ -17,6 +17,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/camptocamp/prometheus-puppetdb/internal/outputs"
+	"github.com/camptocamp/prometheus-puppetdb/internal/types"
 )
 
 var version = "undefined"
@@ -37,24 +38,6 @@ type Config struct {
 	NameSpace     string        `long:"namespace" description:"Kubernetes NameSpace to use." env:"PROMETHEUS_PUPPETDB_NAMESPACE" default:"default"`
 	Sleep         time.Duration `short:"s" long:"sleep" description:"Sleep time between queries." env:"PROMETHEUS_PUPPETDB_SLEEP" default:"5s"`
 	Manpage       bool          `short:"m" long:"manpage" description:"Output manpage."`
-}
-
-// Exporter contains exporter targets and labels
-type Exporter struct {
-	URL    string
-	Labels map[string]string
-}
-
-// Node contains Puppet node informations
-type Node struct {
-	Certname  string                 `json:"certname"`
-	Exporters map[string]interface{} `json:"value"`
-}
-
-// StaticConfig contains Prometheus static targets
-type StaticConfig struct {
-	Targets []string          `yaml:"targets"`
-	Labels  map[string]string `yaml:"labels"`
 }
 
 func loadConfig(version string) (c Config, err error) {
@@ -79,7 +62,7 @@ func loadConfig(version string) (c Config, err error) {
 	return
 }
 
-func getNodes(client *http.Client, puppetdb string, query string) (nodes []Node, err error) {
+func getNodes(client *http.Client, puppetdb string, query string) (nodes []types.Node, err error) {
 	form := strings.NewReader(fmt.Sprintf("{\"query\":\"%s\"}", query))
 	puppetdbURL := fmt.Sprintf("%s/pdb/query/v4", puppetdb)
 	req, err := http.NewRequest("POST", puppetdbURL, form)
@@ -102,8 +85,8 @@ func getNodes(client *http.Client, puppetdb string, query string) (nodes []Node,
 	return
 }
 
-func getTargets() (staticConfigs []StaticConfig, err error) {
-	staticConfigs = []StaticConfig{}
+func getTargets() (staticConfigs []types.StaticConfig, err error) {
+	staticConfigs = []types.StaticConfig{}
 
 	nodes, err := getNodes(client, cfg.PuppetDBURL, cfg.Query)
 	if err != nil {
@@ -140,7 +123,7 @@ func getTargets() (staticConfigs []StaticConfig, err error) {
 				for k, v := range vt.Labels {
 					labels[k] = v
 				}
-				staticConfig := StaticConfig{
+				staticConfig := types.StaticConfig{
 					Targets: []string{url.Host},
 					Labels:  labels,
 				}
@@ -159,31 +142,31 @@ func getTargets() (staticConfigs []StaticConfig, err error) {
 }
 
 // Allow backward compatibility (to remove)
-func extractTargets(targets interface{}) (t []Exporter, err error) {
+func extractTargets(targets interface{}) (t []types.Exporter, err error) {
 	switch v := targets.(type) {
 	case string:
 		log.Warningf("Deprecated: target should be a struct Exporter, not a String: %v", v)
-		e := Exporter{
+		e := types.Exporter{
 			URL:    v,
 			Labels: make(map[string]string),
 		}
-		t = []Exporter{e}
+		t = []types.Exporter{e}
 	case []interface{}:
 		switch v[0].(type) {
 		case string:
 			log.Warningf("Deprecated: target should be a struct Exporter, not an Array of Strings: %v", v)
-			t = make([]Exporter, len(v))
+			t = make([]types.Exporter, len(v))
 			for i := range v {
-				t[i] = Exporter{
+				t[i] = types.Exporter{
 					URL:    v[i].(string),
 					Labels: make(map[string]string),
 				}
 			}
 		case map[string]interface{}:
-			t = make([]Exporter, len(v))
+			t = make([]types.Exporter, len(v))
 			for i := range v {
 				a := v[i].(map[string]interface{})
-				t[i] = Exporter{
+				t[i] = types.Exporter{
 					URL:    a["url"].(string),
 					Labels: make(map[string]string),
 				}

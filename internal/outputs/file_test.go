@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/camptocamp/prometheus-puppetdb/internal/types"
 )
 
 func TestFileSetupSuccess(t *testing.T) {
@@ -31,9 +33,17 @@ func TestFileWriteOutputSuccess(t *testing.T) {
 	defer os.RemoveAll(dir)
 	tmpfn := filepath.Join(dir, "output.yaml")
 
-	data := map[string]string{
-		"foo": "bar",
+	data := []types.StaticConfig{
+		{
+			Targets: []string{
+				"127.0.0.1:9103",
+			},
+			Labels: map[string]string{
+				"foo": "bar",
+			},
+		},
 	}
+
 	o := &OutputFile{
 		path: tmpfn,
 	}
@@ -45,5 +55,5 @@ func TestFileWriteOutputSuccess(t *testing.T) {
 	if err != nil {
 		assert.FailNow(t, "failed to read output file content", err.Error())
 	}
-	assert.Equal(t, "foo: bar\n", string(fileContent))
+	assert.Equal(t, "- targets:\n  - 127.0.0.1:9103\n  labels:\n    foo: bar\n", string(fileContent))
 }

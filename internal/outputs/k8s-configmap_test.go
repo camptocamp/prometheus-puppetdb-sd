@@ -6,12 +6,22 @@ import (
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	testclient "k8s.io/client-go/kubernetes/fake"
+
+	"github.com/camptocamp/prometheus-puppetdb/internal/types"
 )
 
 func TestK8SConfigMapWriteOutputSuccess(t *testing.T) {
-	data := map[string]string{
-		"foo": "bar",
+	data := []types.StaticConfig{
+		{
+			Targets: []string{
+				"127.0.0.1:9103",
+			},
+			Labels: map[string]string{
+				"foo": "bar",
+			},
+		},
 	}
+
 	o := &OutputK8SConfigMap{
 		namespace:     "foo",
 		configMapName: "bar",
@@ -28,7 +38,7 @@ func TestK8SConfigMapWriteOutputSuccess(t *testing.T) {
 	assert.Equal(
 		t,
 		map[string]string{
-			"targets.yml": "foo: bar\n",
+			"targets.yml": "- targets:\n  - 127.0.0.1:9103\n  labels:\n    foo: bar\n",
 		},
 		cm.Data,
 	)

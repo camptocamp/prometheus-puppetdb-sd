@@ -2,6 +2,8 @@ package outputs
 
 import (
 	"fmt"
+
+	"github.com/camptocamp/prometheus-puppetdb/internal/types"
 )
 
 // Options stores options that might be used by the different output types
@@ -16,7 +18,7 @@ type Options struct {
 
 // Output is an abstraction to the different output types
 type Output interface {
-	WriteOutput(data interface{}) (err error)
+	WriteOutput(staticConfigs []types.StaticConfig) (err error)
 }
 
 // Setup returns an output type

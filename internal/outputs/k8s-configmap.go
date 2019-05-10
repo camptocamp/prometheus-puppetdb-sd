@@ -9,6 +9,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+
+	"github.com/camptocamp/prometheus-puppetdb/internal/types"
 )
 
 // OutputK8SConfigMap stores data needed to fill a Kubernetes ConfigMap
@@ -49,8 +51,8 @@ func setupOutputK8SConfigMap(namespace, configMapName string) (*OutputK8SConfigM
 	return o, nil
 }
 
-// WriteOutput writes data to a Kubernetes ConfigMap
-func (o *OutputK8SConfigMap) WriteOutput(data interface{}) (err error) {
+// WriteOutput writes static configs to a Kubernetes ConfigMap
+func (o *OutputK8SConfigMap) WriteOutput(staticConfigs []types.StaticConfig) (err error) {
 	var configMap *v1.ConfigMap
 	_, err = o.k8sClient.CoreV1().ConfigMaps(o.namespace).Get(o.configMapName, metav1.GetOptions{})
 	if err != nil {
@@ -72,7 +74,7 @@ func (o *OutputK8SConfigMap) WriteOutput(data interface{}) (err error) {
 		}
 	}
 
-	c, err := yaml.Marshal(&data)
+	c, err := yaml.Marshal(&staticConfigs)
 	if err != nil {
 		return
 	}

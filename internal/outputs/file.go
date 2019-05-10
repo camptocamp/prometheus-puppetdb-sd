@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 
 	yaml "gopkg.in/yaml.v1"
+
+	"github.com/camptocamp/prometheus-puppetdb/internal/types"
 )
 
 // OutputFile stores values needed by the File output
@@ -20,10 +22,10 @@ func setupOutputFile(path string) (*OutputFile, error) {
 	}, err
 }
 
-// WriteOutput writes data to a file
-func (o *OutputFile) WriteOutput(data interface{}) (err error) {
+// WriteOutput writes static configs to a file
+func (o *OutputFile) WriteOutput(staticConfigs []types.StaticConfig) (err error) {
 	os.MkdirAll(filepath.Dir(o.path), 0755)
-	c, err := yaml.Marshal(&data)
+	c, err := yaml.Marshal(&staticConfigs)
 	if err != nil {
 		return
 	}
