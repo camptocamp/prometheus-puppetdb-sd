@@ -51,7 +51,8 @@ func setupOutputK8SConfigMap(namespace, configMapName string) (*OutputK8SConfigM
 
 // WriteOutput writes data to a Kubernetes ConfigMap
 func (o *OutputK8SConfigMap) WriteOutput(data interface{}) (err error) {
-	configMap, err := o.k8sClient.CoreV1().ConfigMaps(o.namespace).Get(o.configMapName, metav1.GetOptions{})
+	var configMap *v1.ConfigMap
+	_, err = o.k8sClient.CoreV1().ConfigMaps(o.namespace).Get(o.configMapName, metav1.GetOptions{})
 	if err != nil {
 		configMap = &v1.ConfigMap{
 			TypeMeta: metav1.TypeMeta{
@@ -65,7 +66,7 @@ func (o *OutputK8SConfigMap) WriteOutput(data interface{}) (err error) {
 				"targets.yml": "",
 			},
 		}
-		configMap, err = o.k8sClient.CoreV1().ConfigMaps(o.namespace).Create(configMap)
+		_, err = o.k8sClient.CoreV1().ConfigMaps(o.namespace).Create(configMap)
 		if err != nil {
 			return fmt.Errorf("failed to create configmap: %s", err)
 		}
@@ -88,7 +89,7 @@ func (o *OutputK8SConfigMap) WriteOutput(data interface{}) (err error) {
 			"targets.yml": string(c),
 		},
 	}
-	configMap, err = o.k8sClient.CoreV1().ConfigMaps(o.namespace).Update(configMap)
+	_, err = o.k8sClient.CoreV1().ConfigMaps(o.namespace).Update(configMap)
 	if err != nil {
 		return fmt.Errorf("failed to update configmap: %s", err)
 	}
