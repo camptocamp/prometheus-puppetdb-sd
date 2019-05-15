@@ -15,7 +15,7 @@ var version = "undefined"
 func main() {
 	cfg, err := config.LoadConfig(version)
 	if err != nil {
-		log.Fatal(err)
+		return
 	}
 
 	o, err := outputs.Setup(&outputs.Options{
