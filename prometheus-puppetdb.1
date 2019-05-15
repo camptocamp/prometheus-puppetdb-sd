@@ -1,4 +1,4 @@
-.TH prometheus-puppetdb 1 "12 May 2019"
+.TH prometheus-puppetdb 1 "14 May 2019"
 .SH NAME
 prometheus-puppetdb \- Prometheus scrape lists based on PuppetDB
 .SH SYNOPSIS
@@ -40,6 +40,9 @@ Kubernetes ConfigMap to update.
 .TP
 \fB\fB\-\-namespace\fR <default: \fI$PROMETHEUS_PUPPETDB_NAMESPACE\fR>\fP
 Kubernetes NameSpace to use.
+.TP
+\fB\fB\-\-object-labels\fR <default: \fI$PROMETHEUS_PUPPETDB_OBJECT_LABELS\fR>\fP
+Labels to add to Kubernetes objects.
 .TP
 \fB\fB\-s\fR, \fB\-\-sleep\fR <default: \fI"5s"\fR>\fP
 Sleep time between queries.

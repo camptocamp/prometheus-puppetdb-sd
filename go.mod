@@ -1,6 +1,7 @@
 module github.com/camptocamp/prometheus-puppetdb
 
 require (
+	github.com/coreos/prometheus-operator v0.28.0
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/gogo/protobuf v1.0.0 // indirect

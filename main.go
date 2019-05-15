@@ -23,6 +23,7 @@ func main() {
 		FilePath:      cfg.File,
 		ConfigMapName: cfg.ConfigMap,
 		Namespace:     cfg.Namespace,
+		ObjectLabels:  cfg.ObjectLabels,
 	})
 	if err != nil {
 		log.Fatalf("failed to setup output: %s", err)

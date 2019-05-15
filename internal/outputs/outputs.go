@@ -14,6 +14,7 @@ type Options struct {
 	// Used by Kubernetes Configmap
 	ConfigMapName string
 	Namespace     string
+	ObjectLabels  map[string]string
 }
 
 // Output is an abstraction to the different output types
@@ -30,6 +31,8 @@ func Setup(options *Options) (Output, error) {
 		return setupOutputFile(options.FilePath)
 	case "configmap":
 		return setupOutputK8SConfigMap(options.Namespace, options.ConfigMapName)
+	case "external-services":
+		return setupOutputK8SExternalService(options.Namespace, options.ObjectLabels)
 	case "":
 		return nil, fmt.Errorf("no output defined")
 	default:
