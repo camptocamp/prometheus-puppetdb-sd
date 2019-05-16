@@ -39,8 +39,17 @@ func NewClient(rawURL, certFile, keyFile, caCertFile string, sslSkipVerify bool)
 		return
 	}
 
-	var transport *http.Transport
+	var transport = &http.Transport{}
+	var tlsConfig *tls.Config
 	if puppetdbURL.Scheme == "https" {
+		tlsConfig = &tls.Config{
+			InsecureSkipVerify: sslSkipVerify,
+		}
+		transport = &http.Transport{TLSClientConfig: tlsConfig}
+	}
+
+	// Assume SSL authentication is required
+	if certFile != "" {
 		// Load client cert
 		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 		if err != nil {
@@ -58,16 +67,15 @@ func NewClient(rawURL, certFile, keyFile, caCertFile string, sslSkipVerify bool)
 		caCertPool.AppendCertsFromPEM(caCert)
 
 		// Setup HTTPS client
-		tlsConfig := &tls.Config{
+		tlsConfig = &tls.Config{
 			Certificates:       []tls.Certificate{cert},
 			RootCAs:            caCertPool,
 			InsecureSkipVerify: sslSkipVerify,
 		}
 		tlsConfig.BuildNameToCertificate()
 		transport = &http.Transport{TLSClientConfig: tlsConfig}
-	} else {
-		transport = &http.Transport{}
 	}
+
 	puppetDBClient.client = &http.Client{Transport: transport}
 	return
 }
