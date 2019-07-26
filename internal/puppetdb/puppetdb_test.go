@@ -11,55 +11,75 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/camptocamp/prometheus-puppetdb/internal/types"
+	"github.com/camptocamp/prometheus-puppetdb-sd/internal/config"
+	"github.com/camptocamp/prometheus-puppetdb-sd/internal/types"
 )
 
 var fakeResponse = `
 [
 	{
-		"certname": "foo",
-		"value": {
-			"foo_lorem": [
-				{
-					"url": "http://127.0.0.1:9103/metrics",
-					"labels": {
-						"alpha": "beta"
-					}
-				}
+		"certname": "server-1.example.com",
+		"parameters": {
+			"job_name": "node-exporter",
+			"targets": [
+				"server-1.example.com:9100"
 			],
-			"foo_ipsum": [
-				{
-					"url": "http://127.0.0.1:9104/metrics",
-					"labels": {
-						"gamma": "delta"
-					}
-				}
-			]
+			"labels": {
+				"environment": "production",
+				"team": "team-1"
+			}
 		}
 	},
 	{
-		"certname": "bar",
-		"value": {
-			"bar_lorem": [
-				{
-					"url": "http://127.0.0.1:9103/metrics",
-					"labels": {
-						"alpha": "beta"
-					}
-				}
+		"certname": "server-1.example.com",
+		"parameters": {
+			"job_name": "apache-exporter",
+			"targets": [
+				"server-1.example.com:9117"
 			],
-			"bar_ipsum": [
-				{
-					"url": "http://127.0.0.1:9104/metrics",
-					"labels": {
-						"gamma": "delta"
-					}
-				}
-			]
+			"labels": {
+				"environment": "production",
+				"team": "team-2"
+			}
+		}
+	},
+	{
+		"certname": "server-2.example.com",
+		"parameters": {
+			"job_name": "node-exporter",
+			"targets": [
+				"server-2.example.com:9100"
+			],
+			"labels": {
+				"environment": "development",
+				"team": "team-1"
+			}
 		}
 	}
 ]
 `
+
+func testNewClient(t *testing.T, config *config.PuppetDBConfig) {
+	client, err := NewClient(config)
+	if err != nil {
+		assert.FailNow(t, "Failed to create PuppetDB client", err.Error())
+	}
+
+	// Test client
+	resp, err := client.client.Get(config.URL + "/fake")
+	if err != nil {
+		assert.FailNow(t, "Failed to issue GET request", err.Error())
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		assert.FailNowf(t, "Unexpected HTTP status code", "Expected %d, but got %d", http.StatusOK, resp.StatusCode)
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		assert.FailNow(t, "Failed to read HTTP response body", err.Error())
+	}
+	assert.Equal(t, []byte(fakeResponse), body)
+}
 
 // Try to connect to a PuppetDB with a basic HTTP request
 func TestNewClientHTTP(t *testing.T) {
@@ -74,17 +94,11 @@ func TestNewClientHTTP(t *testing.T) {
 	)
 	defer ts.Close()
 
-	client, err := NewClient(ts.URL, "", "", "", false)
-	assert.Nil(t, err)
+	config := config.PuppetDBConfig{
+		URL: ts.URL,
+	}
 
-	// Test client
-	resp, err := client.client.Get(ts.URL + "/fake")
-	assert.Nil(t, err)
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	body, err := ioutil.ReadAll(resp.Body)
-	assert.Nil(t, err)
-	assert.Equal(t, []byte(fakeResponse), body)
+	testNewClient(t, &config)
 }
 
 // Try to connect to a PuppetDB with a basic HTTPS request
@@ -100,17 +114,12 @@ func TestNewClientHTTPS(t *testing.T) {
 	)
 	defer ts.Close()
 
-	client, err := NewClient(ts.URL, "", "", "", true)
-	assert.Nil(t, err)
+	config := config.PuppetDBConfig{
+		URL:           ts.URL,
+		SSLSkipVerify: true,
+	}
 
-	// Test client
-	resp, err := client.client.Get(ts.URL + "/fake")
-	assert.Nil(t, err)
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	body, err := ioutil.ReadAll(resp.Body)
-	assert.Nil(t, err)
-	assert.Equal(t, []byte(fakeResponse), body)
+	testNewClient(t, &config)
 }
 
 // Try to connect to a PuppetDB with an SSL authentication
@@ -122,7 +131,7 @@ func TestNewClientSSLAuth(t *testing.T) {
 	// Mock http server
 	certpool, err := x509.SystemCertPool()
 	if err != nil {
-		assert.FailNow(t, "failed to load system certificates while setting up test server", err.Error())
+		assert.FailNow(t, "Failed to load system certificates while setting up test server", err.Error())
 	}
 	if certpool == nil {
 		certpool = x509.NewCertPool()
@@ -130,10 +139,10 @@ func TestNewClientSSLAuth(t *testing.T) {
 
 	pem, err := ioutil.ReadFile(fakeCA)
 	if err != nil {
-		assert.FailNow(t, "failed to load CA while setting up test server", err.Error())
+		assert.FailNow(t, "Failed to load CA while setting up test server", err.Error())
 	}
 	if !certpool.AppendCertsFromPEM(pem) {
-		assert.FailNow(t, "failed to append certs from PEM while setting up test server", err.Error())
+		assert.FailNow(t, "Failed to append certs from PEM while setting up test server", err.Error())
 	}
 
 	ts := httptest.NewTLSServer(
@@ -149,52 +158,59 @@ func TestNewClientSSLAuth(t *testing.T) {
 	ts.TLS.RootCAs = certpool
 	defer ts.Close()
 
-	client, err := NewClient(ts.URL, fakeClientCert, fakeClientKey, fakeCA, true)
-	assert.Nil(t, err)
+	config := config.PuppetDBConfig{
+		URL:           ts.URL,
+		KeyFile:       fakeClientKey,
+		CertFile:      fakeClientCert,
+		CACertFile:    fakeCA,
+		SSLSkipVerify: true,
+	}
 
-	// Test client
-	resp, err := client.client.Get(ts.URL + "/fake")
-	assert.Nil(t, err)
-	defer resp.Body.Close()
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	body, err := ioutil.ReadAll(resp.Body)
-	assert.Nil(t, err)
-	assert.Equal(t, []byte(fakeResponse), body)
+	testNewClient(t, &config)
 }
 
-// This test is badly written, we should use mocks instead
-func TestGetTargets(t *testing.T) {
-	expectedResult := []types.StaticConfig{
-		types.StaticConfig{
-			Targets: []string{
-				"127.0.0.1:9103",
+func TestGetResources(t *testing.T) {
+	expectedResult := []*types.Resource{
+		{
+			Certname: "server-1.example.com",
+			Parameters: types.Parameters{
+				JobName: "node-exporter",
+				Targets: []string{
+					"server-1.example.com:9100",
+				},
+				Labels: map[string]string{
+					"environment": "production",
+					"team":        "team-1",
+				},
 			},
-			Labels: map[string]string{
-				"alpha":        "beta",
-				"certname":     "foo",
-				"metrics_path": "/metrics",
-				"job":          "foo_lorem",
-				"scheme":       "http",
+		},
+		{
+			Certname: "server-1.example.com",
+			Parameters: types.Parameters{
+				JobName: "apache-exporter",
+				Targets: []string{
+					"server-1.example.com:9117",
+				},
+				Labels: map[string]string{
+					"environment": "production",
+					"team":        "team-2",
+				},
+			},
+		},
+		{
+			Certname: "server-2.example.com",
+			Parameters: types.Parameters{
+				JobName: "node-exporter",
+				Targets: []string{
+					"server-2.example.com:9100",
+				},
+				Labels: map[string]string{
+					"environment": "development",
+					"team":        "team-1",
+				},
 			},
 		},
 	}
-	fakeResponse = `
-[
-	{
-		"certname": "foo",
-		"value": {
-			"foo_lorem": [
-				{
-					"url": "http://127.0.0.1:9103/metrics",
-					"labels": {
-						"alpha": "beta"
-					}
-				}
-			]
-		}
-	}
-]
-`
 
 	// Mock http server
 	ts := httptest.NewServer(
@@ -207,11 +223,92 @@ func TestGetTargets(t *testing.T) {
 	)
 	defer ts.Close()
 
-	client, err := NewClient(ts.URL, "", "", "", false)
-	assert.Nil(t, err)
+	config := config.PuppetDBConfig{
+		URL: ts.URL,
+	}
 
-	result, err := client.GetTargets("fake")
-	assert.Nil(t, err)
+	client, err := NewClient(&config)
+	if err != nil {
+		assert.FailNow(t, "Failed to create PuppetDB client", err.Error())
+	}
+
+	result, err := client.getResources()
+	if err != nil {
+		assert.FailNow(t, "Failed to get Puppet resources", err.Error())
+	}
+
+	assert.Equal(t, expectedResult, result)
+}
+
+// This test is badly written, we should use mocks instead
+func TestGetScrapeConfigs(t *testing.T) {
+	expectedResult := []*types.ScrapeConfig{
+		{
+			JobName: "node-exporter",
+			StaticConfigs: []*types.StaticConfig{
+				{
+					Targets: []string{
+						"server-1.example.com:9100",
+					},
+					Labels: map[string]string{
+						"certname":    "server-1.example.com",
+						"environment": "production",
+						"team":        "team-1",
+					},
+				},
+				{
+					Targets: []string{
+						"server-2.example.com:9100",
+					},
+					Labels: map[string]string{
+						"certname":    "server-2.example.com",
+						"environment": "development",
+						"team":        "team-1",
+					},
+				},
+			},
+		},
+		{
+			JobName: "apache-exporter",
+			StaticConfigs: []*types.StaticConfig{
+				{
+					Targets: []string{
+						"server-1.example.com:9117",
+					},
+					Labels: map[string]string{
+						"certname":    "server-1.example.com",
+						"environment": "production",
+						"team":        "team-2",
+					},
+				},
+			},
+		},
+	}
+
+	// Mock http server
+	ts := httptest.NewServer(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/pdb/query/v4" {
+				w.Header().Add("Content-Type", "application/json")
+				w.Write([]byte(fakeResponse))
+			}
+		}),
+	)
+	defer ts.Close()
+
+	cfg := config.PuppetDBConfig{
+		URL: ts.URL,
+	}
+
+	client, err := NewClient(&cfg)
+	if err != nil {
+		assert.FailNow(t, "Failed to create PuppetDB client", err.Error())
+	}
+
+	result, err := client.GetScrapeConfigs(&config.PrometheusSDConfig{})
+	if err != nil {
+		assert.FailNow(t, "Failed to get Prometheus scrape configurations", err.Error())
+	}
 
 	assert.Equal(t, expectedResult, result)
 }
