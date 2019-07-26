@@ -3,20 +3,48 @@ package outputs
 import (
 	"fmt"
 
+	"github.com/camptocamp/prometheus-puppetdb-sd/internal/config"
+	"github.com/camptocamp/prometheus-puppetdb-sd/internal/types"
 	yaml "gopkg.in/yaml.v1"
-
-	"github.com/camptocamp/prometheus-puppetdb/internal/types"
 )
 
-// OutputStdout stores values needed to print output to stdout
-type OutputStdout struct{}
+// StdoutOutput stores values needed to print output to stdout
+type StdoutOutput struct {
+	format config.OutputFormat
+}
 
-// WriteOutput writes static configs to stdout
-func (o *OutputStdout) WriteOutput(staticConfigs []types.StaticConfig) (err error) {
-	c, err := yaml.Marshal(&staticConfigs)
-	if err != nil {
+func setupStdoutOutput(cfg *config.OutputConfig) (*StdoutOutput, error) {
+	return &StdoutOutput{
+		format: cfg.Format,
+	}, nil
+}
+
+// WriteOutput writes Prometheus configuration to stdout
+func (o *StdoutOutput) WriteOutput(scrapeConfigs []*types.ScrapeConfig) (err error) {
+	var c []byte
+
+	switch o.format {
+	case config.ScrapeConfigs:
+		c, err = yaml.Marshal(scrapeConfigs)
+		if err != nil {
+			return
+		}
+
+		fmt.Printf("%s", string(c))
+	case config.MergedStaticConfigs:
+		for _, scrapeConfig := range scrapeConfigs {
+			c, err = yaml.Marshal(scrapeConfig.StaticConfigs)
+			if err != nil {
+				return
+			}
+
+			fmt.Printf("%s", string(c))
+		}
+	default:
+		err = fmt.Errorf("unexpected output format '%s'", o.format)
+
 		return
 	}
-	fmt.Printf("%s", string(c))
+
 	return
 }

@@ -1,9 +1,9 @@
 language: go
 sudo: required
 services: docker
-go_import_path: github.com/camptocamp/prometheus-puppetdb
+go_import_path: github.com/camptocamp/prometheus-puppetdb-sd
 go:
-  - "1.11"
+  - "1.12"
 install:
   - go get github.com/mattn/goveralls
   - go get golang.org/x/tools/cmd/cover
@@ -16,7 +16,7 @@ jobs:
       name: "Docker image"
       script: docker build .
     - name: "Coveralls"
-      if: repo = camptocamp/prometheus-puppetdb
+      if: repo = camptocamp/prometheus-puppetdb-sd
       script:
         - make test
         - "$HOME/gopath/bin/goveralls -service=travis-ci -coverprofile=coverage"

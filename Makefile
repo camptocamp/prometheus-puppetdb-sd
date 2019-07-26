@@ -1,20 +1,20 @@
 DEPS = $(wildcard */*/*/*.go)
 VERSION = $(shell git describe --always --dirty)
 
-all: lint test prometheus-puppetdb prometheus-puppetdb.1
+all: lint test prometheus-puppetdb-sd prometheus-puppetdb-sd.1
 
-prometheus-puppetdb: main.go $(DEPS)
+prometheus-puppetdb-sd: main.go $(DEPS)
 	GO111MODULE=on CGO_ENABLED=0 GOOS=linux \
 	  go build -mod=vendor -a \
 		  -ldflags="-X main.version=$(VERSION)" \
 	    -installsuffix cgo -o $@ $<
 	strip $@
 
-prometheus-puppetdb.1: prometheus-puppetdb
-	./prometheus-puppetdb -m > $@
+prometheus-puppetdb-sd.1: prometheus-puppetdb-sd
+	./prometheus-puppetdb-sd -m > $@
 
 clean:
-	rm -f prometheus-puppetdb prometheus-puppetdb.1
+	rm -f prometheus-puppetdb-sd prometheus-puppetdb-sd.1
 
 lint:
 	go vet $<

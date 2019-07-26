@@ -1,99 +1,66 @@
-Prometheus-PuppetDB
-===================
+Prometheus PuppetDB SD
+======================
 
-[![Docker Pulls](https://img.shields.io/docker/pulls/camptocamp/prometheus-puppetdb.svg)](https://hub.docker.com/r/camptocamp/prometheus-puppetdb/)
-[![Build Status](https://img.shields.io/travis/camptocamp/prometheus-puppetdb/master.svg)](https://travis-ci.org/camptocamp/prometheus-puppetdb)
-[![Coverage Status](https://img.shields.io/coveralls/camptocamp/prometheus-puppetdb.svg)](https://coveralls.io/r/camptocamp/prometheus-puppetdb?branch=master)
-[![Go Report Card](https://goreportcard.com/badge/github.com/camptocamp/prometheus-puppetdb)](https://goreportcard.com/report/github.com/camptocamp/prometheus-puppetdb)
+[![Docker Pulls](https://img.shields.io/docker/pulls/camptocamp/prometheus-puppetdb-sd.svg)](https://hub.docker.com/r/camptocamp/prometheus-puppetdb-sd/)
+[![Build Status](https://img.shields.io/travis/camptocamp/prometheus-puppetdb-sd/master.svg)](https://travis-ci.org/camptocamp/prometheus-puppetdb-sd)
+[![Coverage Status](https://img.shields.io/coveralls/camptocamp/prometheus-puppetdb-sd.svg)](https://coveralls.io/r/camptocamp/prometheus-puppetdb-sd?branch=master)
+[![Go Report Card](https://goreportcard.com/badge/github.com/camptocamp/prometheus-puppetdb-sd)](https://goreportcard.com/report/github.com/camptocamp/prometheus-puppetdb-sd)
 [![By Camptocamp](https://img.shields.io/badge/by-camptocamp-fb7047.svg)](http://www.camptocamp.com)
 
 
-Prometheus scrape lists based on PuppetDB.
+Prometheus PuppetDB SD is a PuppetDB based service discovery tool for Prometheus. It queries PuppetDB to retrieve a list of targets and output Prometheus configuration to scrape the discovered targets.
 
 
 ## Installing
 
 ```shell
-$ go get github.com/camptocamp/prometheus-puppetdb
+$ go get github.com/camptocamp/prometheus-puppetdb-sd
 ```
 
 ## Usage
 
 ```shell
 Usage:
-  prometheus-puppetdb [OPTIONS]
+  prometheus-puppetdb-sd [OPTIONS]
 
 Application Options:
-  -V, --version         Display version.
-  -u, --puppetdb-url=   PuppetDB base URL. (default: http://puppetdb:8080) [$PROMETHEUS_PUPPETDB_URL]
-  -x, --cert-file=      A PEM encoded certificate file. (default: certs/client.pem) [$PROMETHEUS_CERT_FILE]
-  -y, --key-file=       A PEM encoded private key file. (default: certs/client.key) [$PROMETHEUS_KEY_FILE]
-  -z, --cacert-file=    A PEM encoded CA's certificate file. (default: certs/cacert.pem) [$PROMETHEUS_CACERT_FILE]
-  -k, --ssl-skip-verify Skip SSL verification.
-  -q, --puppetdb-query= PuppetDB query. (default: facts[certname, value] { name='prometheus_exporters' and nodes { deactivated is null } }) [$PROMETHEUS_PUPPETDB_QUERY]
-  -o, --output=         Output. One of stdout, file or configmap. (default:
-  stdout) [$PROMETHEUS_PUPPETDB_OUTPUT]
-  -f, --config-file     Prometheus target file. (default: /etc/prometheus/targets/prometheus-puppetdb/targets.yml) [$PROMETHEUS_PUPPETDB_FILE]
-  --configmap           Kubernetes ConfigMap to update. (default: prometheus-puppetdb) [$PROMETHEUS_PUPPETDB_CONFIGMAP]
-  --namespace           Kubernetes NameSpace to use. (default: default) [$PROMETHEUS_PUPPETDB_NAMESPACE]
-  -s, --sleep=          Sleep time between queries. (default: 5s) [$PROMETHEUS_PUPPETDB_SLEEP]
-  -m, --manpage         Output manpage.
+  -V, --version                                                             Display version.
+  -m, --manpage                                                             Output manpage.
+  -s, --sleep=                                                              Sleep time between queries. (default: 5s) [$SLEEP]
+
+PuppetDB Client Options:
+  -u, --puppetdb.url=                                                       PuppetDB base URL. (default: http://puppetdb:8080) [$PUPPETDB_URL]
+  -x, --puppetdb.cert-file=                                                 A PEM encoded certificate file. [$PUPPETDB_CERT_FILE]
+  -y, --puppetdb.key-file=                                                  A PEM encoded private key file. [$PUPPETDB_KEY_FILE]
+  -z, --puppetdb.cacert-file=                                               A PEM encoded CA's certificate file. [$PUPPETDB_CACERT_FILE]
+  -k, --puppetdb.ssl-skip-verify                                            Skip SSL verification. [$PUPPETDB_SSL_SKIP_VERIFY]
+  -q, --puppetdb.query=                                                     PuppetDB query. (default: resources[certname, parameters] { type = 'Prometheus::Scrape_job' and exported = true }) [$PUPPETDB_QUERY]
+
+Prometheus Service Discovery Options:
+      --prometheus.proxy-url=                                               Prometheus target scraping proxy URL. [$PROMETHEUS_PROXY_URL]
+
+Output Configuration:
+  -o, --output.method=[stdout|file|k8s-secret]                              Output method. (default: stdout) [$OUTPUT_METHOD]
+      --output.format=[scrape-configs|static-configs|merged-static-configs] Output format. (default: scrape-configs) [$OUTPUT_FORMAT]
+
+File Output Configuration:
+  -f, --output.file.filename=                                               Output filename. (default: puppetdb-sd.yml) [$OUTPUT_FILENAME]
+      --output.file.filename-pattern=                                       Output filename pattern ('*' is the placeholder). (default: *.yml) [$OUTPUT_FILENAME_PATTERN]
+      --output.file.directory=                                              Output directory. (default: /etc/prometheus/puppetdb-sd) [$OUTPUT_DIRECTORY]
+
+Kubernetes Secret Output Configuration:
+      --output.k8s-secret.secret-name=                                      Kubernetes secret name. [$OUTPUT_K8S_SECRET_NAME]
+      --output.k8s-secret.namespace=                                        Kubernetes namespace. [$OUTPUT_K8S_NAMESPACE]
+      --output.k8s-secret.object-labels=                                    Labels to add to Kubernetes objects. (default: app.kubernetes.io/name:prometheus-puppetdb-sd) [$OUTPUT_K8S_OBJECT_LABELS]
+      --output.k8s-secret.secret-key=                                       Kubernetes secret key. [$OUTPUT_K8S_SECRET_KEY]
+      --output.k8s-secret.secret-key-pattern=                               Kubernetes secret key pattern ('*' is the placeholder). [$OUTPUT_K8S_SECRET_KEY_PATTERN]
 
 Help Options:
-  -h, --help            Show this help message
+  -h, --help                                                                Show this help message
 ```
 
 ## How does it work
 
-Prometheus-puppetdb looks for a fact in PuppetDB ("prometheus_exporters" by default) to generate the list of targets.
+Prometheus PuppetDB SD works by querying PuppetDB for `Prometheus::Scrape_job` exported resources. These resources comes from the [Prometheus Puppet module](https://github.com/voxpupuli/puppet-prometheus) either by setting the `export_scrape_job` parameter to `true` when using the module's exporter classes or the module's defined type `prometheus::daemon`, or by using the module's defined type `prometheus::scrape_job` directly.
 
-The fact must be a hash using exporters as keys and, as value, a hash which contains the target URL and a hash of labels,
-e.g.:
-
-```
-collectd: [{url: http://node.example.com:1234/metrics, labels:{role: foo}}]
-```
-
-You can populate the fact from Puppet using, for example, the `puppetlabs/concat` module:
-
-For example, you can put this in your main profile:
-
-```puppet
-concat { '/etc/puppetlabs/facter/facts.d/prometheus_exporters.yaml':
-  ensure => present,
-}
-concat::fragment {'prometheus_exporters':
-  target  => '/etc/puppetlabs/facter/facts.d/prometheus_exporters.yaml',
-  content => "prometheus_exporters:\n",
-  order   => '1',
-}
-```
-
-Then, in every profile that deploys a Prometheus Exporter:
-
-```puppet
-concat::fragment {'prometheus_exporter_collectd':
-  target  => '/etc/puppetlabs/facter/facts.d/prometheus_exporters.yaml',
-  content => @("END")
-  collectd:
-    - url: http://${::fqdn}:9103/metrics
-      labels:
-        role: ${::role}
-END
-  ,
-}
-```
-or
-```puppet
-concat::fragment {'prometheus_blackbox_exporter':
-  target  => '/etc/puppetlabs/facter/facts.d/prometheus_exporters.yaml',
-  content => @("END")
-  blackbox:
-    - url: http://${::ipaddress}:9115/probe?target=foo.example.com&module=dns_tcp
-      labels:
-        role: ${::role}
-    - url: http://${::ipaddress}:9115/probe?target=bar.example.com&module=dns_tcp
-END
-  ,
-}
-```
+Prometheus PuppetDB SD then build a Prometheus scrape configuration list from the discovered targets and output it using the chosen method and format.

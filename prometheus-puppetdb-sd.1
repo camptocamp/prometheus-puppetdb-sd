@@ -1,0 +1,78 @@
+.TH prometheus-puppetdb-sd 1 "7 August 2019"
+.SH NAME
+prometheus-puppetdb-sd \- PuppetDB based service discovery for Prometheus
+.SH SYNOPSIS
+\fBprometheus-puppetdb-sd\fP [OPTIONS]
+.SH DESCRIPTION
+
+.SH OPTIONS
+.SS Application Options
+.TP
+\fB\fB\-V\fR, \fB\-\-version\fR\fP
+Display version.
+.TP
+\fB\fB\-m\fR, \fB\-\-manpage\fR\fP
+Output manpage.
+.TP
+\fB\fB\-s\fR, \fB\-\-sleep\fR <default: \fI"5s"\fR>\fP
+Sleep time between queries.
+.SS PuppetDB Client Options
+.TP
+\fB\fB\-u\fR, \fB\-\-puppetdb.url\fR <default: \fI"http://puppetdb:8080"\fR>\fP
+PuppetDB base URL.
+.TP
+\fB\fB\-x\fR, \fB\-\-puppetdb.cert-file\fR <default: \fI$PUPPETDB_CERT_FILE\fR>\fP
+A PEM encoded certificate file.
+.TP
+\fB\fB\-y\fR, \fB\-\-puppetdb.key-file\fR <default: \fI$PUPPETDB_KEY_FILE\fR>\fP
+A PEM encoded private key file.
+.TP
+\fB\fB\-z\fR, \fB\-\-puppetdb.cacert-file\fR <default: \fI$PUPPETDB_CACERT_FILE\fR>\fP
+A PEM encoded CA's certificate file.
+.TP
+\fB\fB\-k\fR, \fB\-\-puppetdb.ssl-skip-verify\fR <default: \fI$PUPPETDB_SSL_SKIP_VERIFY\fR>\fP
+Skip SSL verification.
+.TP
+\fB\fB\-q\fR, \fB\-\-puppetdb.query\fR <default: \fI"resources[certname, parameters] { type = 'Prometheus::Scrape_job' and exported = true }"\fR>\fP
+PuppetDB query.
+.SS Prometheus Service Discovery Options
+.TP
+\fB\fB\-\-prometheus.proxy-url\fR <default: \fI$PROMETHEUS_PROXY_URL\fR>\fP
+Prometheus target scraping proxy URL.
+.SS Output Configuration
+.TP
+\fB\fB\-o\fR, \fB\-\-output.method\fR <default: \fI"stdout"\fR>\fP
+Output method.
+.TP
+\fB\fB\-\-output.format\fR <default: \fI"scrape-configs"\fR>\fP
+Output format.
+.SS File Output Configuration
+.TP
+\fB\fB\-f\fR, \fB\-\-output.file.filename\fR <default: \fI"puppetdb-sd.yml"\fR>\fP
+Output filename.
+.TP
+\fB\fB\-\-output.file.filename-pattern\fR <default: \fI"*.yml"\fR>\fP
+Output filename pattern ('*' is the placeholder).
+.TP
+\fB\fB\-\-output.file.directory\fR <default: \fI"/etc/prometheus/puppetdb-sd"\fR>\fP
+Output directory.
+.SS Kubernetes Secret Output Configuration
+.TP
+\fB\fB\-\-output.k8s-secret.secret-name\fR <default: \fI$OUTPUT_K8S_SECRET_NAME\fR>\fP
+Kubernetes secret name.
+.TP
+\fB\fB\-\-output.k8s-secret.namespace\fR <default: \fI$OUTPUT_K8S_NAMESPACE\fR>\fP
+Kubernetes namespace.
+.TP
+\fB\fB\-\-output.k8s-secret.object-labels\fR <default: \fI"app.kubernetes.io/name:prometheus-puppetdb-sd"\fR>\fP
+Labels to add to Kubernetes objects.
+.TP
+\fB\fB\-\-output.k8s-secret.secret-key\fR <default: \fI$OUTPUT_K8S_SECRET_KEY\fR>\fP
+Kubernetes secret key.
+.TP
+\fB\fB\-\-output.k8s-secret.secret-key-pattern\fR <default: \fI$OUTPUT_K8S_SECRET_KEY_PATTERN\fR>\fP
+Kubernetes secret key pattern ('*' is the placeholder).
+.SS Help Options
+.TP
+\fB\fB\-h\fR, \fB\-\-help\fR\fP
+Show this help message

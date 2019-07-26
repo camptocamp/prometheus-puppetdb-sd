@@ -2,20 +2,19 @@
 version: '3'
 services:
   prometheus-server:
-    image: prom/prometheus:v2.1.0
+    image: prom/prometheus:v2.11.1
     command:
-      - --config.file=/etc/config/prometheus.yml
+      - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
       - --web.enable-lifecycle
     volumes:
-      - ./prometheus.yml:/etc/config/prometheus.yml
-      - prometheus-puppetdb-targets:/etc/prometheus-puppetdb
-  prometheus-puppetdb:
-    image: camptocamp/prometheus-puppetdb:0.7.0
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-puppetdb-sd-output:/etc/prometheus/puppetdb-sd/puppetdb-sd.yml
+  prometheus-puppetdb-sd:
+    image: camptocamp/prometheus-puppetdb-sd:0.11.0
     environment:
-      PROMETHEUS_PUPPETDB_OUTPUT: file
-      PROMETHEUS_PUPPETDB_FILE: /etc/prometheus-puppetdb/targets.yml
+      OUTPUT_METHOD: file
     volumes:
-      - prometheus-puppetdb-targets:/etc/prometheus-puppetdb
+      - prometheus-puppetdb-sd-output:/etc/prometheus/puppetdb-sd/puppetdb-sd.yml
 volumes:
-  prometheus-puppetdb-targets: {}
+  prometheus-puppetdb-sd-output: {}

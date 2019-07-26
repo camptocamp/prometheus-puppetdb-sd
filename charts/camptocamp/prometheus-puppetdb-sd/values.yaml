@@ -1,11 +1,11 @@
-# Default values for prometheus-puppetdb.
+# Default values for prometheus-puppetdb-sd.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
 image:
-  repository: camptocamp/prometheus-puppetdb
-  tag: 0.9.0
-  pullPolicy: Always
+  repository: camptocamp/prometheus-puppetdb-sd
+  tag: 0.11.0
+  pullPolicy: IfNotPresent
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -25,7 +25,11 @@ tolerations: []
 
 affinity: {}
 
-prometheusPuppetdb:
+prometheusPuppetdbSd:
+  args:
+    output.method: k8s-secret
+    output.k8s-secret.secret-name: prometheus-puppetdb-sd-output
+    output.k8s-secret.secret-key: puppetdb-sd.yml
   Extraconfigmapmounts: []
   extraSecretMounts: []
 
@@ -47,10 +51,11 @@ prometheus:
     enabled: false
 
   server:
-    extraConfigmapMounts:
-      - name: prometheus-puppetdb
-        configMap: prometheus-puppetdb
-        mountPath: /etc/prometheus-puppetdb
+    extraSecretMounts:
+      - name: prometheus-puppetdb-sd-out
+        secretName: prometheus-puppetdb-sd-out
+        mountPath: /etc/prometheus/puppetdb.yml
+        subPath: puppetdb.yml
         readOnly: true
 
   serverFiles:
@@ -63,7 +68,7 @@ prometheus:
         - job_name: puppetdb
           file_sd_configs:
             - files:
-              - /etc/prometheus-puppetdb/targets.yml
+              - /etc/prometheus/puppetdb.yml
           relabel_configs:
             - source_labels: [metrics_path]
               regex: (.+)

@@ -1,4 +1,4 @@
-module github.com/camptocamp/prometheus-puppetdb
+module github.com/camptocamp/prometheus-puppetdb-sd
 
 require (
 	github.com/coreos/prometheus-operator v0.28.0
