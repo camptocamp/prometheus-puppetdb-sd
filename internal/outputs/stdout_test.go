@@ -4,44 +4,65 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"strings"
 	"testing"
 
+	"github.com/camptocamp/prometheus-puppetdb/internal/config"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/camptocamp/prometheus-puppetdb/internal/types"
 )
 
-func TestStdoutWriteOutputSuccess(t *testing.T) {
-	data := []types.StaticConfig{
-		{
-			Targets: []string{
-				"127.0.0.1:9103",
-			},
-			Labels: map[string]string{
-				"foo": "bar",
-			},
-		},
+func (o *StdoutOutput) testStdoutWriteOutput(t *testing.T) {
+	oldStdout := os.Stdout
+
+	for i := range scrapeConfigs {
+		r, w, err := os.Pipe()
+		if err != nil {
+			assert.FailNow(t, "Failed to redirect stdout to a pipe", err.Error())
+		}
+		defer r.Close()
+		defer w.Close()
+
+		os.Stdout = w
+
+		c := make(chan error)
+		go func() {
+			err := o.WriteOutput(scrapeConfigs[i])
+			w.Close()
+			c <- err
+		}()
+
+		var buf bytes.Buffer
+		_, err = io.Copy(&buf, r)
+		if err != nil {
+			assert.FailNow(t, "Failed to read output", err.Error())
+		}
+
+		err = <-c
+		if err != nil {
+			assert.FailNow(t, "Failed to write output", err.Error())
+		}
+
+		output := buf.String()
+		expectedOutput := expectedOutputs[i][o.format].(string)
+
+		assert.Equal(t, strings.TrimSpace(expectedOutput), strings.TrimSpace(output))
 	}
 
-	o := &OutputStdout{}
+	os.Stdout = oldStdout
+}
 
-	old := os.Stdout
-	r, w, _ := os.Pipe()
-	os.Stdout = w
+func TestStdoutWriteOutputScrapeConfigsSuccess(t *testing.T) {
+	o := StdoutOutput{
+		format: config.ScrapeConfigs,
+	}
 
-	err := o.WriteOutput(data)
+	o.testStdoutWriteOutput(t)
+}
 
-	outC := make(chan string)
-	go func() {
-		var buf bytes.Buffer
-		io.Copy(&buf, r)
-		outC <- buf.String()
-	}()
+func TestStdoutWriteOutputMergedStaticConfigsSuccess(t *testing.T) {
+	o := StdoutOutput{
+		format: config.MergedStaticConfigs,
+	}
 
-	w.Close()
-	os.Stdout = old
-	out := <-outC
-
-	assert.Nil(t, err)
-	assert.Equal(t, "- targets:\n  - 127.0.0.1:9103\n  labels:\n    foo: bar\n", out)
+	o.testStdoutWriteOutput(t)
 }
