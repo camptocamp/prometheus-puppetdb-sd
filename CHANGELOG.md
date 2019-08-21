@@ -1,13 +1,20 @@
 # Change Log
 
-## [Unreleased](https://github.com/camptocamp/prometheus-puppetdb/tree/HEAD)
+## [0.11.0](https://github.com/camptocamp/prometheus-puppetdb/tree/0.11.0) (2019-08-21)
+[Full Changelog](https://github.com/camptocamp/prometheus-puppetdb/compare/0.10.0...0.11.0)
 
-[Full Changelog](https://github.com/camptocamp/prometheus-puppetdb/compare/0.10.0...HEAD)
+**Breaking changes:**
+- Project has been renamed to Prometheus PuppetDB SD.
+- Kubernetes configmap output has been modified to become a Kubernetes secret output.
+- Puppetdb input source has been switched from custom fact to Prometheus::Scrape_job resource.
+- Default output format has been changed.
 
 **Implemented enhancements:**
 
 - Fix ineffassign warnings [\#18](https://github.com/camptocamp/prometheus-puppetdb/issues/18)
 - Fix golint warnings [\#15](https://github.com/camptocamp/prometheus-puppetdb/issues/15)
+- Configuration has been refactored: it is now organized in group of options.
+- New output formats have been added: in addition to a unique static_config list, a list of scrape_configs or a list of static_config by job can now be outputted.
 
 **Closed issues:**
 
