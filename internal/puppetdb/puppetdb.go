@@ -101,6 +101,14 @@ func (p *PuppetDB) GetScrapeConfigs(cfg *config.PrometheusSDConfig) (scrapeConfi
 		targets := parameters.Targets
 		labels := parameters.Labels
 
+		if targets == nil {
+			continue
+		}
+
+		if labels == nil {
+			labels = map[string]string{}
+		}
+
 		scrapeConfig, ok := scrapeConfigMap[jobName]
 		if !ok {
 			scrapeConfig = &types.ScrapeConfig{

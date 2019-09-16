@@ -55,6 +55,21 @@ var fakeResponse = `
 				"team": "team-1"
 			}
 		}
+	},
+	{
+		"certname": "server-3.example.com",
+		"parameters": {
+			"job_name": "node-exporter",
+			"targets": [
+				"server-3.example.com:9100"
+			]
+		}
+	},
+	{
+		"certname": "server-4.example.com",
+		"parameters": {
+			"job_name": "node-exporter"
+		}
 	}
 ]
 `
@@ -210,6 +225,21 @@ func TestGetResources(t *testing.T) {
 				},
 			},
 		},
+		{
+			Certname: "server-3.example.com",
+			Parameters: types.Parameters{
+				JobName: "node-exporter",
+				Targets: []string{
+					"server-3.example.com:9100",
+				},
+			},
+		},
+		{
+			Certname: "server-4.example.com",
+			Parameters: types.Parameters{
+				JobName: "node-exporter",
+			},
+		},
 	}
 
 	// Mock http server
@@ -264,6 +294,14 @@ func TestGetScrapeConfigs(t *testing.T) {
 						"certname":    "server-2.example.com",
 						"environment": "development",
 						"team":        "team-1",
+					},
+				},
+				{
+					Targets: []string{
+						"server-3.example.com:9100",
+					},
+					Labels: map[string]string{
+						"certname": "server-3.example.com",
 					},
 				},
 			},
