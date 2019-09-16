@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.11.2](https://github.com/camptocamp/prometheus-puppetdb/tree/0.11.2) (2019-09-16)
+[Full Changelog](https://github.com/camptocamp/prometheus-puppetdb/compare/0.11.1...0.11.2)
+
+**Closed issues:**
+
+- Dockerfile: fix volume permissions
+
 ## [0.11.1](https://github.com/camptocamp/prometheus-puppetdb/tree/0.11.1) (2019-09-16)
 [Full Changelog](https://github.com/camptocamp/prometheus-puppetdb/compare/0.11.0...0.11.1)
 

@@ -11,7 +11,7 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus-puppetdb-sd-output:/etc/prometheus/puppetdb-sd/puppetdb-sd.yml
   prometheus-puppetdb-sd:
-    image: camptocamp/prometheus-puppetdb-sd:0.11.1
+    image: camptocamp/prometheus-puppetdb-sd:0.11.2
     environment:
       OUTPUT_METHOD: file
     volumes:
