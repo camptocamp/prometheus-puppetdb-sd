@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.11.1](https://github.com/camptocamp/prometheus-puppetdb/tree/0.11.1) (2019-09-16)
+[Full Changelog](https://github.com/camptocamp/prometheus-puppetdb/compare/0.11.0...0.11.1)
+
+**Closed issues:**
+
+- Dockerfile: fix a bug with CMD
+
 ## [0.11.0](https://github.com/camptocamp/prometheus-puppetdb/tree/0.11.0) (2019-08-21)
 [Full Changelog](https://github.com/camptocamp/prometheus-puppetdb/compare/0.10.0...0.11.0)
 
