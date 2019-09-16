@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.11.3](https://github.com/camptocamp/prometheus-puppetdb/tree/0.11.3) (2019-09-16)
+[Full Changelog](https://github.com/camptocamp/prometheus-puppetdb/compare/0.11.2...0.11.3)
+
+**Closed issues:**
+
+- puppetdb: handle cases when targets or labels are empty
+
 ## [0.11.2](https://github.com/camptocamp/prometheus-puppetdb/tree/0.11.2) (2019-09-16)
 [Full Changelog](https://github.com/camptocamp/prometheus-puppetdb/compare/0.11.1...0.11.2)
 
