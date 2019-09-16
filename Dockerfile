@@ -10,4 +10,3 @@ COPY --from=builder /data/targets.yml /data/targets.yml
 VOLUME /data
 USER 1001
 ENTRYPOINT ["/prometheus-puppetdb-sd"]
-CMD [""]
