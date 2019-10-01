@@ -45,7 +45,7 @@ func (o *FileOutput) testFileWriteOutput(t *testing.T) {
 	o.filenamePattern = "*.yml"
 	o.directory = directory
 
-	oldPaths := map[string]bool{}
+	oldPaths := map[string]struct{}{}
 
 	for i := range scrapeConfigs {
 		err = o.WriteOutput(scrapeConfigs[i])
@@ -67,7 +67,7 @@ func (o *FileOutput) testFileWriteOutput(t *testing.T) {
 
 			assert.Equal(t, strings.TrimSpace(expectedOutput), strings.TrimSpace(output))
 		case config.StaticConfigs:
-			paths := map[string]bool{}
+			paths := map[string]struct{}{}
 
 			for _, scrapeConfig := range scrapeConfigs[i] {
 				jobName := scrapeConfig.JobName
@@ -84,7 +84,7 @@ func (o *FileOutput) testFileWriteOutput(t *testing.T) {
 
 				assert.Equal(t, strings.TrimSpace(expectedOutput), strings.TrimSpace(output))
 
-				paths[path] = true
+				paths[path] = struct{}{}
 				delete(oldPaths, path)
 			}
 

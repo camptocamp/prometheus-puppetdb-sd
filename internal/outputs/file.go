@@ -20,7 +20,7 @@ type FileOutput struct {
 	format config.OutputFormat
 
 	state struct {
-		oldPaths map[string]bool
+		oldPaths map[string]struct{}
 	}
 }
 
@@ -54,7 +54,7 @@ func (o *FileOutput) WriteOutput(scrapeConfigs []*types.ScrapeConfig) (err error
 			return
 		}
 	case config.StaticConfigs, config.MergedStaticConfigs:
-		paths := map[string]bool{}
+		paths := map[string]struct{}{}
 
 		for _, scrapeConfig := range scrapeConfigs {
 			c, err = yaml.Marshal(scrapeConfig.StaticConfigs)
@@ -72,7 +72,7 @@ func (o *FileOutput) WriteOutput(scrapeConfigs []*types.ScrapeConfig) (err error
 					return
 				}
 
-				paths[path] = true
+				paths[path] = struct{}{}
 				delete(o.state.oldPaths, path)
 			}
 		}

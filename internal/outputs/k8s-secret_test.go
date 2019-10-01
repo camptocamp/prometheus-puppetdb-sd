@@ -21,7 +21,7 @@ func (o *K8sSecretOutput) testK8sSecretWriteOutput(t *testing.T) {
 	o.secretKey = "puppetdb-sd.yml"
 	o.secretKeyPattern = "*.yml"
 
-	oldKeys := map[string]bool{}
+	oldKeys := map[string]struct{}{}
 
 	for i := range scrapeConfigs {
 		err := o.WriteOutput(scrapeConfigs[i])
@@ -41,7 +41,7 @@ func (o *K8sSecretOutput) testK8sSecretWriteOutput(t *testing.T) {
 
 			assert.Equal(t, strings.TrimSpace(expectedOutput), strings.TrimSpace(output))
 		case config.StaticConfigs:
-			keys := map[string]bool{}
+			keys := map[string]struct{}{}
 
 			for _, scrapeConfig := range scrapeConfigs[i] {
 				jobName := scrapeConfig.JobName
@@ -53,7 +53,7 @@ func (o *K8sSecretOutput) testK8sSecretWriteOutput(t *testing.T) {
 
 				assert.Equal(t, strings.TrimSpace(expectedOutput), strings.TrimSpace(output))
 
-				keys[key] = true
+				keys[key] = struct{}{}
 				delete(oldKeys, key)
 			}
 
