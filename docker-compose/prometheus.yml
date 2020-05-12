@@ -21,7 +21,7 @@ scrape_configs:
   scheme: http
   file_sd_configs:
   - files:
-    - /etc/prometheus/puppetdb.yml
+    - /etc/prometheus/puppetdb-sd/puppetdb-sd.yml
     refresh_interval: 5m
   relabel_configs:
   - source_labels: [metrics_path]
