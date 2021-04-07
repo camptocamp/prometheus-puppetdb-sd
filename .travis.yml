@@ -3,7 +3,7 @@ sudo: required
 services: docker
 go_import_path: github.com/camptocamp/prometheus-puppetdb-sd
 go:
-  - "1.12"
+  - "1.16"
 install:
   - go get github.com/mattn/goveralls
   - go get golang.org/x/tools/cmd/cover
