@@ -67,11 +67,13 @@ type FileOutputConfig struct {
 
 // K8sSecretOutputConfig describes Kubernetes secret output configuration
 type K8sSecretOutputConfig struct {
-	SecretName       string            `long:"secret-name" description:"Kubernetes secret name." env:"OUTPUT_K8S_SECRET_NAME"`
-	Namespace        string            `long:"namespace" description:"Kubernetes namespace." env:"OUTPUT_K8S_NAMESPACE"`
-	ObjectLabels     map[string]string `long:"object-labels" description:"Labels to add to Kubernetes objects." env:"OUTPUT_K8S_OBJECT_LABELS" default:"app.kubernetes.io/name:prometheus-puppetdb-sd"`
-	SecretKey        string            `long:"secret-key" description:"Kubernetes secret key." env:"OUTPUT_K8S_SECRET_KEY"`
-	SecretKeyPattern string            `long:"secret-key-pattern" description:"Kubernetes secret key pattern ('*' is the placeholder)." env:"OUTPUT_K8S_SECRET_KEY_PATTERN"`
+	SecretName            string            `long:"secret-name" description:"Kubernetes secret name." env:"OUTPUT_K8S_SECRET_NAME"`
+	Namespace             string            `long:"namespace" description:"Kubernetes namespace." env:"OUTPUT_K8S_NAMESPACE"`
+	ObjectLabels          map[string]string `long:"object-labels" description:"Labels to add to Kubernetes objects." env:"OUTPUT_K8S_OBJECT_LABELS" default:"app.kubernetes.io/name:prometheus-puppetdb-sd"`
+	SecretKey             string            `long:"secret-key" description:"Kubernetes secret key." env:"OUTPUT_K8S_SECRET_KEY"`
+	SecretKeyPattern      string            `long:"secret-key-pattern" description:"Kubernetes secret key pattern ('*' is the placeholder)." env:"OUTPUT_K8S_SECRET_KEY_PATTERN"`
+	ExtraConfigSecretName string            `long:"extra-config-secret-name" description:"Kubernetes secret name containing additional config." env:"OUTPUT_K8S_EXTRA_CONFIG_SECRET_NAME"`
+	ExtraConfigSecretKey  string            `long:"extra-config-secret-key" description:"Key of the Kubernetes secret containing additional config." env:"OUTPUT_K8S_EXTRA_CONFIG_SECRET_KEY"`
 }
 
 const (

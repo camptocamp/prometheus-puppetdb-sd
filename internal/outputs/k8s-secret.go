@@ -23,6 +23,8 @@ type K8sSecretOutput struct {
 	objectLabels     map[string]string
 	secretKey        string
 	secretKeyPattern string
+	extraSecretName  string
+	extraSecretKey   string
 
 	format config.OutputFormat
 }
@@ -34,6 +36,8 @@ func setupK8sSecretOutput(cfg *config.OutputConfig) (*K8sSecretOutput, error) {
 		objectLabels:     cfg.K8sSecret.ObjectLabels,
 		secretKey:        cfg.K8sSecret.SecretKey,
 		secretKeyPattern: cfg.K8sSecret.SecretKeyPattern,
+		extraSecretName:  cfg.K8sSecret.ExtraConfigSecretName,
+		extraSecretKey:   cfg.K8sSecret.ExtraConfigSecretKey,
 
 		format: cfg.Format,
 	}
@@ -73,6 +77,7 @@ func (o *K8sSecretOutput) WriteOutput(scrapeConfigs []*types.ScrapeConfig) (err 
 		},
 	}
 
+	// Output Secret
 	_, err = o.k8sClient.CoreV1().Secrets(o.namespace).Get(o.secretName, metav1.GetOptions{})
 	if err != nil {
 		_, err = o.k8sClient.CoreV1().Secrets(o.namespace).Create(&secret)
@@ -80,6 +85,9 @@ func (o *K8sSecretOutput) WriteOutput(scrapeConfigs []*types.ScrapeConfig) (err 
 			return fmt.Errorf("failed to create secret (%s)", err)
 		}
 	}
+
+	// Extra Secret
+	extraContent, err := o.getExtraConfigContent()
 
 	secret.Data = map[string][]byte{}
 
@@ -93,7 +101,7 @@ func (o *K8sSecretOutput) WriteOutput(scrapeConfigs []*types.ScrapeConfig) (err 
 			return
 		}
 
-		secret.Data[o.secretKey] = c
+		secret.Data[o.secretKey] = append(c, extraContent...)
 	case config.StaticConfigs, config.MergedStaticConfigs:
 		for _, scrapeConfig := range scrapeConfigs {
 			c, err = yaml.Marshal(scrapeConfig.StaticConfigs)
@@ -109,7 +117,7 @@ func (o *K8sSecretOutput) WriteOutput(scrapeConfigs []*types.ScrapeConfig) (err 
 		}
 
 		if o.format == config.MergedStaticConfigs {
-			secret.Data[o.secretKey] = mc
+			secret.Data[o.secretKey] = append(mc, extraContent...)
 		}
 	default:
 		err = fmt.Errorf("unexpected output format '%s'", o.format)
@@ -122,5 +130,27 @@ func (o *K8sSecretOutput) WriteOutput(scrapeConfigs []*types.ScrapeConfig) (err 
 		return fmt.Errorf("failed to update secret (%s)", err)
 	}
 
+	return
+}
+
+// getExtraConfigContent returns the content of the extra config secret
+func (o *K8sSecretOutput) getExtraConfigContent() (content []byte, err error) {
+	var extraContent string
+
+	if o.extraSecretName == "" || o.extraSecretKey == "" {
+		return
+	}
+
+	extraSecret, err := o.k8sClient.CoreV1().Secrets(o.namespace).Get(o.extraSecretName, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve extra secret (%s)", err)
+	}
+
+	if val, ok := extraSecret.Data[o.extraSecretKey]; ok {
+		extraContent = string(val)
+	} else {
+		return nil, fmt.Errorf("failed to retrieve extra secret content (%s)", err)
+	}
+	content = []byte(extraContent + "\n")
 	return
 }
