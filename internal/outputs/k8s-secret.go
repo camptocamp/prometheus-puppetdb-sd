@@ -88,6 +88,9 @@ func (o *K8sSecretOutput) WriteOutput(scrapeConfigs []*types.ScrapeConfig) (err 
 
 	// Extra Secret
 	extraContent, err := o.getExtraConfigContent()
+	if err != nil {
+		return fmt.Errorf("failed to retrieve extra config content (%s)", err)
+	}
 
 	secret.Data = map[string][]byte{}
 
@@ -151,6 +154,6 @@ func (o *K8sSecretOutput) getExtraConfigContent() (content []byte, err error) {
 	} else {
 		return nil, fmt.Errorf("failed to retrieve extra secret content (%s)", err)
 	}
-	content = []byte(extraContent + "\n")
+	content = []byte("\n" + extraContent)
 	return
 }
