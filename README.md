@@ -11,6 +11,13 @@ Prometheus PuppetDB SD
 Prometheus PuppetDB SD is a PuppetDB based service discovery tool for Prometheus. It queries PuppetDB to retrieve a list of targets and output Prometheus configuration to scrape the discovered targets.
 
 
+## Note on built-in Prometheus PuppetDB Service Discovery 
+
+Prometheus introduced [built-in PuppetDB Service Discovery](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#puppetdb_sd_config) in [version 2.31.0](https://github.com/prometheus/prometheus/blob/main/CHANGELOG.md#2310--2021-11-02).
+
+In the future, this project will be deprecated in favor of the built-in option.
+
+
 ## Installing
 
 ```shell
