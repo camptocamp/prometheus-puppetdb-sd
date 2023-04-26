@@ -1,5 +1,5 @@
 DEPS = $(wildcard */*/*/*.go)
-VERSION = $(shell git describe --always --dirty)
+VERSION = $(shell git describe --always --tags)
 
 all: lint test prometheus-puppetdb-sd prometheus-puppetdb-sd.1
 
