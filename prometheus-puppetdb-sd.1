@@ -1,4 +1,4 @@
-.TH prometheus-puppetdb-sd 1 "16 September 2019"
+.TH prometheus-puppetdb-sd 1 "26 October 2023"
 .SH NAME
 prometheus-puppetdb-sd \- PuppetDB based service discovery for Prometheus
 .SH SYNOPSIS
@@ -72,6 +72,12 @@ Kubernetes secret key.
 .TP
 \fB\fB\-\-output.k8s-secret.secret-key-pattern\fR <default: \fI$OUTPUT_K8S_SECRET_KEY_PATTERN\fR>\fP
 Kubernetes secret key pattern ('*' is the placeholder).
+.TP
+\fB\fB\-\-output.k8s-secret.extra-config-secret-name\fR <default: \fI$OUTPUT_K8S_EXTRA_CONFIG_SECRET_NAME\fR>\fP
+Kubernetes secret name containing additional config.
+.TP
+\fB\fB\-\-output.k8s-secret.extra-config-secret-key\fR <default: \fI$OUTPUT_K8S_EXTRA_CONFIG_SECRET_KEY\fR>\fP
+Key of the Kubernetes secret containing additional config.
 .SS Help Options
 .TP
 \fB\fB\-h\fR, \fB\-\-help\fR\fP
