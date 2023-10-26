@@ -6,7 +6,7 @@ import (
 )
 
 var scrapeConfigs = [][]*types.ScrapeConfig{
-	[]*types.ScrapeConfig{
+	{
 		{
 			JobName: "node-exporter",
 			StaticConfigs: []*types.StaticConfig{
@@ -48,7 +48,7 @@ var scrapeConfigs = [][]*types.ScrapeConfig{
 			},
 		},
 	},
-	[]*types.ScrapeConfig{
+	{
 		{
 			JobName: "node-exporter",
 			StaticConfigs: []*types.StaticConfig{
@@ -78,7 +78,7 @@ var scrapeConfigs = [][]*types.ScrapeConfig{
 }
 
 var expectedOutputs = []map[config.OutputFormat]interface{}{
-	map[config.OutputFormat]interface{}{
+	{
 		config.ScrapeConfigs: `
 - job_name: node-exporter
   static_configs:
@@ -148,7 +148,7 @@ var expectedOutputs = []map[config.OutputFormat]interface{}{
     team: team-2
 `,
 	},
-	map[config.OutputFormat]interface{}{
+	{
 		config.ScrapeConfigs: `
 - job_name: node-exporter
   static_configs:

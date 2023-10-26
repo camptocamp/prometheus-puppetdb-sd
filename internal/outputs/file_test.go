@@ -1,8 +1,8 @@
 package outputs
 
 import (
+	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,7 +14,7 @@ import (
 )
 
 func TestFileSetupSuccess(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "prometheus-puppetdb-sd-test")
+	tmpDir, err := os.MkdirTemp("", "prometheus-puppetdb-sd-test")
 	if err != nil {
 		assert.FailNow(t, "Failed to create temporary directory", err.Error())
 	}
@@ -35,7 +35,10 @@ func TestFileSetupSuccess(t *testing.T) {
 }
 
 func (o *FileOutput) testFileWriteOutput(t *testing.T) {
-	directory, err := ioutil.TempDir("", "prometheus-puppetdb-sd-test")
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	defer cancelFunc()
+
+	directory, err := os.MkdirTemp("", "prometheus-puppetdb-sd-test")
 	if err != nil {
 		assert.FailNow(t, "Failed to create temporary directory", err.Error())
 	}
@@ -48,7 +51,7 @@ func (o *FileOutput) testFileWriteOutput(t *testing.T) {
 	oldPaths := map[string]struct{}{}
 
 	for i := range scrapeConfigs {
-		err = o.WriteOutput(scrapeConfigs[i])
+		err = o.WriteOutput(ctx, scrapeConfigs[i])
 		if err != nil {
 			assert.FailNow(t, "Failed to write output", err.Error())
 		}
@@ -57,7 +60,7 @@ func (o *FileOutput) testFileWriteOutput(t *testing.T) {
 		case config.ScrapeConfigs, config.MergedStaticConfigs:
 			path := fmt.Sprintf("%s/%s", o.directory, o.filename)
 
-			buf, err := ioutil.ReadFile(path)
+			buf, err := os.ReadFile(path)
 			if err != nil {
 				assert.FailNow(t, "Failed to read output file content", err.Error())
 			}
@@ -74,7 +77,7 @@ func (o *FileOutput) testFileWriteOutput(t *testing.T) {
 
 				path := strings.Replace(fmt.Sprintf("%s/%s", o.directory, o.filenamePattern), "*", jobName, 1)
 
-				buf, err := ioutil.ReadFile(path)
+				buf, err := os.ReadFile(path)
 				if err != nil {
 					assert.FailNow(t, "Failed to read output file content", err.Error())
 				}

@@ -1,6 +1,7 @@
 package outputs
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -36,7 +37,7 @@ func setupFileOutput(cfg *config.OutputConfig) (*FileOutput, error) {
 }
 
 // WriteOutput writes Prometheus configuration to files
-func (o *FileOutput) WriteOutput(scrapeConfigs []*types.ScrapeConfig) (err error) {
+func (o *FileOutput) WriteOutput(ctx context.Context, scrapeConfigs []*types.ScrapeConfig) (err error) {
 	var c []byte
 	var mc []byte
 

@@ -2,6 +2,7 @@ package outputs
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"os"
 	"strings"
@@ -12,6 +13,9 @@ import (
 )
 
 func (o *StdoutOutput) testStdoutWriteOutput(t *testing.T) {
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	defer cancelFunc()
+
 	oldStdout := os.Stdout
 
 	for i := range scrapeConfigs {
@@ -26,7 +30,7 @@ func (o *StdoutOutput) testStdoutWriteOutput(t *testing.T) {
 
 		c := make(chan error)
 		go func() {
-			err := o.WriteOutput(scrapeConfigs[i])
+			err := o.WriteOutput(ctx, scrapeConfigs[i])
 			w.Close()
 			c <- err
 		}()

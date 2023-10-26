@@ -1,6 +1,7 @@
 package outputs
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/camptocamp/prometheus-puppetdb-sd/internal/config"
@@ -9,7 +10,7 @@ import (
 
 // Output is an abstraction to the different output types
 type Output interface {
-	WriteOutput(scrapeConfigs []*types.ScrapeConfig) (err error)
+	WriteOutput(ctx context.Context, scrapeConfigs []*types.ScrapeConfig) (err error)
 }
 
 // Setup returns an output type

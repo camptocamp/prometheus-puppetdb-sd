@@ -5,9 +5,10 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/camptocamp/prometheus-puppetdb-sd/internal/config"
@@ -59,7 +60,7 @@ func NewClient(cfg *config.PuppetDBConfig) (puppetDBClient *PuppetDB, err error)
 		}
 
 		// Load CA cert
-		caCert, err := ioutil.ReadFile(cfg.CACertFile)
+		caCert, err := os.ReadFile(cfg.CACertFile)
 		if err != nil {
 			err = fmt.Errorf("failed to load ca cert: %s", err)
 			return nil, err
@@ -73,7 +74,6 @@ func NewClient(cfg *config.PuppetDBConfig) (puppetDBClient *PuppetDB, err error)
 			RootCAs:            caCertPool,
 			InsecureSkipVerify: cfg.SSLSkipVerify,
 		}
-		tlsConfig.BuildNameToCertificate()
 		transport = &http.Transport{TLSClientConfig: tlsConfig}
 	}
 
@@ -156,7 +156,7 @@ func (p *PuppetDB) getResources() (resources []*types.Resource, err error) {
 		return
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		err = fmt.Errorf("failed to read HTTP response body (%s)", err)
 		return

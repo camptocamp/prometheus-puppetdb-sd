@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -13,6 +14,9 @@ import (
 var version = "undefined"
 
 func main() {
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	defer cancelFunc()
+
 	cfg := config.LoadConfig(version)
 
 	o, err := outputs.Setup(&cfg.Output)
@@ -32,7 +36,7 @@ func main() {
 		if err != nil {
 			log.Errorf("Failed to generate scrape_configs: %s", err)
 		} else {
-			err = o.WriteOutput(scrapeConfigs)
+			err = o.WriteOutput(ctx, scrapeConfigs)
 			if err != nil {
 				log.Errorf("Failed to write output: %s", err)
 			}

@@ -1,6 +1,7 @@
 package outputs
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -11,6 +12,9 @@ import (
 )
 
 func (o *K8sSecretOutput) testK8sSecretWriteOutput(t *testing.T) {
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	defer cancelFunc()
+
 	o.k8sClient = testclient.NewSimpleClientset()
 
 	o.secretName = "prometheus-puppetdb-sd-out"
@@ -24,12 +28,12 @@ func (o *K8sSecretOutput) testK8sSecretWriteOutput(t *testing.T) {
 	oldKeys := map[string]struct{}{}
 
 	for i := range scrapeConfigs {
-		err := o.WriteOutput(scrapeConfigs[i])
+		err := o.WriteOutput(ctx, scrapeConfigs[i])
 		if err != nil {
 			assert.FailNow(t, "Failed to write output", err.Error())
 		}
 
-		secret, err := o.k8sClient.CoreV1().Secrets(o.namespace).Get(o.secretName, metav1.GetOptions{})
+		secret, err := o.k8sClient.CoreV1().Secrets(o.namespace).Get(ctx, o.secretName, metav1.GetOptions{})
 		if err != nil {
 			assert.FailNow(t, "Failed to retrieve secret", err.Error())
 		}

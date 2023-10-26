@@ -28,8 +28,12 @@ type FakeAdmissionregistrationV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakeAdmissionregistrationV1alpha1) InitializerConfigurations() v1alpha1.InitializerConfigurationInterface {
-	return &FakeInitializerConfigurations{c}
+func (c *FakeAdmissionregistrationV1alpha1) ValidatingAdmissionPolicies() v1alpha1.ValidatingAdmissionPolicyInterface {
+	return &FakeValidatingAdmissionPolicies{c}
+}
+
+func (c *FakeAdmissionregistrationV1alpha1) ValidatingAdmissionPolicyBindings() v1alpha1.ValidatingAdmissionPolicyBindingInterface {
+	return &FakeValidatingAdmissionPolicyBindings{c}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

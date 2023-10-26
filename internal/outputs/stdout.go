@@ -1,6 +1,7 @@
 package outputs
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/camptocamp/prometheus-puppetdb-sd/internal/config"
@@ -20,7 +21,7 @@ func setupStdoutOutput(cfg *config.OutputConfig) (*StdoutOutput, error) {
 }
 
 // WriteOutput writes Prometheus configuration to stdout
-func (o *StdoutOutput) WriteOutput(scrapeConfigs []*types.ScrapeConfig) (err error) {
+func (o *StdoutOutput) WriteOutput(ctx context.Context, scrapeConfigs []*types.ScrapeConfig) (err error) {
 	var c []byte
 
 	switch o.format {

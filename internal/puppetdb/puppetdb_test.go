@@ -3,9 +3,10 @@ package puppetdb
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -89,7 +90,7 @@ func testNewClient(t *testing.T, config *config.PuppetDBConfig) {
 	if resp.StatusCode != http.StatusOK {
 		assert.FailNowf(t, "Unexpected HTTP status code", "Expected %d, but got %d", http.StatusOK, resp.StatusCode)
 	}
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		assert.FailNow(t, "Failed to read HTTP response body", err.Error())
 	}
@@ -152,7 +153,7 @@ func TestNewClientSSLAuth(t *testing.T) {
 		certpool = x509.NewCertPool()
 	}
 
-	pem, err := ioutil.ReadFile(fakeCA)
+	pem, err := os.ReadFile(fakeCA)
 	if err != nil {
 		assert.FailNow(t, "Failed to load CA while setting up test server", err.Error())
 	}

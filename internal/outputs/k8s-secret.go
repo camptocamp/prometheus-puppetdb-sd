@@ -1,6 +1,7 @@
 package outputs
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -69,7 +70,7 @@ func setupK8sSecretOutput(cfg *config.OutputConfig) (*K8sSecretOutput, error) {
 }
 
 // WriteOutput writes Prometheus configuration to a Kubernetes Secret
-func (o *K8sSecretOutput) WriteOutput(scrapeConfigs []*types.ScrapeConfig) (err error) {
+func (o *K8sSecretOutput) WriteOutput(ctx context.Context, scrapeConfigs []*types.ScrapeConfig) (err error) {
 	secret := v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   o.secretName,
@@ -78,16 +79,16 @@ func (o *K8sSecretOutput) WriteOutput(scrapeConfigs []*types.ScrapeConfig) (err 
 	}
 
 	// Output Secret
-	_, err = o.k8sClient.CoreV1().Secrets(o.namespace).Get(o.secretName, metav1.GetOptions{})
+	_, err = o.k8sClient.CoreV1().Secrets(o.namespace).Get(ctx, o.secretName, metav1.GetOptions{})
 	if err != nil {
-		_, err = o.k8sClient.CoreV1().Secrets(o.namespace).Create(&secret)
+		_, err = o.k8sClient.CoreV1().Secrets(o.namespace).Create(ctx, &secret, metav1.CreateOptions{})
 		if err != nil {
 			return fmt.Errorf("failed to create secret (%s)", err)
 		}
 	}
 
 	// Extra Secret
-	extraContent, err := o.getExtraConfigContent()
+	extraContent, err := o.getExtraConfigContent(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to retrieve extra config content (%s)", err)
 	}
@@ -128,7 +129,7 @@ func (o *K8sSecretOutput) WriteOutput(scrapeConfigs []*types.ScrapeConfig) (err 
 		return
 	}
 
-	_, err = o.k8sClient.CoreV1().Secrets(o.namespace).Update(&secret)
+	_, err = o.k8sClient.CoreV1().Secrets(o.namespace).Update(ctx, &secret, metav1.UpdateOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to update secret (%s)", err)
 	}
@@ -137,14 +138,14 @@ func (o *K8sSecretOutput) WriteOutput(scrapeConfigs []*types.ScrapeConfig) (err 
 }
 
 // getExtraConfigContent returns the content of the extra config secret
-func (o *K8sSecretOutput) getExtraConfigContent() (content []byte, err error) {
+func (o *K8sSecretOutput) getExtraConfigContent(ctx context.Context) (content []byte, err error) {
 	var extraContent string
 
 	if o.extraSecretName == "" || o.extraSecretKey == "" {
 		return
 	}
 
-	extraSecret, err := o.k8sClient.CoreV1().Secrets(o.namespace).Get(o.extraSecretName, metav1.GetOptions{})
+	extraSecret, err := o.k8sClient.CoreV1().Secrets(o.namespace).Get(ctx, o.extraSecretName, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve extra secret (%s)", err)
 	}
