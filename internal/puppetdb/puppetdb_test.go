@@ -140,9 +140,9 @@ func TestNewClientHTTPS(t *testing.T) {
 
 // Try to connect to a PuppetDB with an SSL authentication
 func TestNewClientSSLAuth(t *testing.T) {
-	fakeClientCert := filepath.Join("testdata", "client.pem")
+	fakeClientCert := filepath.Join("testdata", "client.crt")
 	fakeClientKey := filepath.Join("testdata", "client.key")
-	fakeCA := filepath.Join("testdata", "ca.pem")
+	fakeCA := filepath.Join("testdata", "ca.crt")
 
 	// Mock http server
 	certpool, err := x509.SystemCertPool()
