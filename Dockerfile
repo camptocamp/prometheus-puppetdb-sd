@@ -1,4 +1,4 @@
-FROM golang:1.13 as builder
+FROM golang:1.21 as builder
 WORKDIR /go/src/github.com/camptocamp/prometheus-puppetdb-sd
 RUN mkdir -p /etc/prometheus/puppetdb-sd/ && chown -R 1001:root /etc/prometheus/puppetdb-sd/ && chmod -R g=u /etc/prometheus/puppetdb-sd/
 COPY . .
