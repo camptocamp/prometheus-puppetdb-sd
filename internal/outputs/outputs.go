@@ -21,6 +21,8 @@ func Setup(cfg *config.OutputConfig) (Output, error) {
 		return setupStdoutOutput(cfg)
 	case config.File:
 		return setupFileOutput(cfg)
+	case config.Http:
+		return setupHttpOutput(cfg)
 	case config.K8sSecret:
 		return setupK8sSecretOutput(cfg)
 	default:
