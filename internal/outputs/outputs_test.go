@@ -82,37 +82,37 @@ var expectedOutputs = []map[config.OutputFormat]interface{}{
 		config.ScrapeConfigs: `
 - job_name: node-exporter
   static_configs:
-  - targets:
-    - server-1.example.com:9100
-    labels:
-      certname: server-1.example.com
-      environment: production
-      team: team-1
-  - targets:
-    - server-2.example.com:9100
-    labels:
-      certname: server-2.example.com
-      environment: development
-      team: team-1
+    - targets:
+        - server-1.example.com:9100
+      labels:
+        certname: server-1.example.com
+        environment: production
+        team: team-1
+    - targets:
+        - server-2.example.com:9100
+      labels:
+        certname: server-2.example.com
+        environment: development
+        team: team-1
 - job_name: apache-exporter
   static_configs:
-  - targets:
-    - server-1.example.com:9117
-    labels:
-      certname: server-1.example.com
-      environment: production
-      team: team-2
+    - targets:
+        - server-1.example.com:9117
+      labels:
+        certname: server-1.example.com
+        environment: production
+        team: team-2
 `,
 		config.StaticConfigs: map[string]string{
 			"node-exporter": `
 - targets:
-  - server-1.example.com:9100
+    - server-1.example.com:9100
   labels:
     certname: server-1.example.com
     environment: production
     team: team-1
 - targets:
-  - server-2.example.com:9100
+    - server-2.example.com:9100
   labels:
     certname: server-2.example.com
     environment: development
@@ -120,7 +120,7 @@ var expectedOutputs = []map[config.OutputFormat]interface{}{
 `,
 			"apache-exporter": `
 - targets:
-  - server-1.example.com:9117
+    - server-1.example.com:9117
   labels:
     certname: server-1.example.com
     environment: production
@@ -129,19 +129,19 @@ var expectedOutputs = []map[config.OutputFormat]interface{}{
 		},
 		config.MergedStaticConfigs: `
 - targets:
-  - server-1.example.com:9100
+    - server-1.example.com:9100
   labels:
     certname: server-1.example.com
     environment: production
     team: team-1
 - targets:
-  - server-2.example.com:9100
+    - server-2.example.com:9100
   labels:
     certname: server-2.example.com
     environment: development
     team: team-1
 - targets:
-  - server-1.example.com:9117
+    - server-1.example.com:9117
   labels:
     certname: server-1.example.com
     environment: production
@@ -152,29 +152,29 @@ var expectedOutputs = []map[config.OutputFormat]interface{}{
 		config.ScrapeConfigs: `
 - job_name: node-exporter
   static_configs:
-  - targets:
-    - server-1.example.com:9100
-    labels:
-      certname: server-1.example.com
-      environment: production
-      team: team-1
-  - targets:
-    - server-2.example.com:9100
-    labels:
-      certname: server-2.example.com
-      environment: development
-      team: team-2
+    - targets:
+        - server-1.example.com:9100
+      labels:
+        certname: server-1.example.com
+        environment: production
+        team: team-1
+    - targets:
+        - server-2.example.com:9100
+      labels:
+        certname: server-2.example.com
+        environment: development
+        team: team-2
 `,
 		config.StaticConfigs: map[string]string{
 			"node-exporter": `
 - targets:
-  - server-1.example.com:9100
+    - server-1.example.com:9100
   labels:
     certname: server-1.example.com
     environment: production
     team: team-1
 - targets:
-  - server-2.example.com:9100
+    - server-2.example.com:9100
   labels:
     certname: server-2.example.com
     environment: development
@@ -183,13 +183,13 @@ var expectedOutputs = []map[config.OutputFormat]interface{}{
 		},
 		config.MergedStaticConfigs: `
 - targets:
-  - server-1.example.com:9100
+    - server-1.example.com:9100
   labels:
     certname: server-1.example.com
     environment: production
     team: team-1
 - targets:
-  - server-2.example.com:9100
+    - server-2.example.com:9100
   labels:
     certname: server-2.example.com
     environment: development
