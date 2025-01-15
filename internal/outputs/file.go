@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	yaml "gopkg.in/yaml.v3"
+	"sigs.k8s.io/yaml"
 
 	"github.com/camptocamp/prometheus-puppetdb-sd/internal/config"
 	"github.com/camptocamp/prometheus-puppetdb-sd/internal/types"

@@ -16,14 +16,14 @@ type Parameters struct {
 // ScrapeConfig represents a Prometheus scrape_config
 // See https://prometheus.io/docs/prometheus/latest/configuration/configuration/#scrape_config
 type ScrapeConfig struct {
-	JobName       string          `yaml:"job_name"`
-	ProxyURL      string          `yaml:"proxy_url,omitempty"`
-	StaticConfigs []*StaticConfig `yaml:"static_configs"`
+	JobName       string          `json:"job_name"`
+	ProxyURL      string          `json:"proxy_url,omitempty"`
+	StaticConfigs []*StaticConfig `json:"static_configs"`
 }
 
 // StaticConfig represents a Prometheus static_config
 // See https://prometheus.io/docs/prometheus/latest/configuration/configuration/#static_config
 type StaticConfig struct {
-	Targets []string          `yaml:"targets"`
-	Labels  map[string]string `yaml:"labels"`
+	Targets []string          `json:"targets"`
+	Labels  map[string]string `json:"labels"`
 }

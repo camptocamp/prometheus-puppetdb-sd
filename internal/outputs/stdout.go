@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"sigs.k8s.io/yaml"
+
 	"github.com/camptocamp/prometheus-puppetdb-sd/internal/config"
 	"github.com/camptocamp/prometheus-puppetdb-sd/internal/types"
-	yaml "gopkg.in/yaml.v3"
 )
 
 // StdoutOutput stores values needed to print output to stdout

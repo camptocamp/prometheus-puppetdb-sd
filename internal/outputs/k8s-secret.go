@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"strings"
 
-	yaml "gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"sigs.k8s.io/yaml"
 
 	"github.com/camptocamp/prometheus-puppetdb-sd/internal/config"
 	"github.com/camptocamp/prometheus-puppetdb-sd/internal/types"
