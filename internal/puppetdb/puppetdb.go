@@ -1,6 +1,7 @@
 package puppetdb
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
@@ -83,11 +84,11 @@ func NewClient(cfg *config.PuppetDBConfig) (puppetDBClient *PuppetDB, err error)
 
 // GetScrapeConfigs requests the PuppetDB to retrieve a list of nodes with their
 // associated endpoints and returns a list of Prometheus scrape configurations
-func (p *PuppetDB) GetScrapeConfigs(cfg *config.PrometheusSDConfig) (scrapeConfigs []*types.ScrapeConfig, err error) {
+func (p *PuppetDB) GetScrapeConfigs(ctx context.Context, cfg *config.PrometheusSDConfig) (scrapeConfigs []*types.ScrapeConfig, err error) {
 	scrapeConfigs = []*types.ScrapeConfig{}
 	scrapeConfigMap := map[string]*types.ScrapeConfig{}
 
-	resources, err := p.getResources()
+	resources, err := p.getResources(ctx)
 	if err != nil {
 		err = fmt.Errorf("failed to get resources: %s", err)
 		return
@@ -141,13 +142,14 @@ func (p *PuppetDB) GetScrapeConfigs(cfg *config.PrometheusSDConfig) (scrapeConfi
 	return
 }
 
-func (p *PuppetDB) getResources() (resources []*types.Resource, err error) {
+func (p *PuppetDB) getResources(ctx context.Context) (resources []*types.Resource, err error) {
 	form := strings.NewReader(fmt.Sprintf("{\"query\":\"%s\"}", p.query))
 	puppetdbURL := fmt.Sprintf("%s/pdb/query/v4", p.url)
 	req, err := http.NewRequest("POST", puppetdbURL, form)
 	if err != nil {
 		return
 	}
+	req = req.WithContext(ctx)
 	req.Header.Add("Content-Type", "application/json")
 
 	resp, err := p.client.Do(req)

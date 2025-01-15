@@ -69,8 +69,8 @@ func setupK8sSecretOutput(cfg *config.OutputConfig) (*K8sSecretOutput, error) {
 	return o, nil
 }
 
-// WriteOutput writes Prometheus configuration to a Kubernetes Secret
-func (o *K8sSecretOutput) WriteOutput(ctx context.Context, scrapeConfigs []*types.ScrapeConfig) (err error) {
+// Write writes Prometheus configuration to a Kubernetes Secret
+func (o *K8sSecretOutput) Write(ctx context.Context, scrapeConfigs []*types.ScrapeConfig) (err error) {
 	secret := v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   o.secretName,
@@ -156,5 +156,14 @@ func (o *K8sSecretOutput) getExtraConfigContent(ctx context.Context) (content []
 		return nil, fmt.Errorf("failed to retrieve extra secret content (%s)", err)
 	}
 	content = []byte("\n" + extraContent)
+	return
+}
+
+// Close deletes the Kubernetes Secret containing Prometheus configuration
+func (o *K8sSecretOutput) Close(ctx context.Context) (err error) {
+	err = o.k8sClient.CoreV1().Secrets(o.namespace).Delete(ctx, o.secretName, metav1.DeleteOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to delete secret (%s)", err)
+	}
 	return
 }

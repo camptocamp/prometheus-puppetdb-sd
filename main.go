@@ -2,6 +2,10 @@ package main
 
 import (
 	"context"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -14,8 +18,14 @@ import (
 var version = "undefined"
 
 func main() {
-	ctx, cancelFunc := context.WithCancel(context.Background())
-	defer cancelFunc()
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	wg := sync.WaitGroup{}
+	defer wg.Wait()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	cfg := config.LoadConfig(version)
 
@@ -31,18 +41,38 @@ func main() {
 		return
 	}
 
-	for {
-		scrapeConfigs, err := puppetDBClient.GetScrapeConfigs(&cfg.PrometheusSD)
-		if err != nil {
-			log.Errorf("Failed to generate scrape_configs: %s", err)
-		} else {
-			err = o.WriteOutput(ctx, scrapeConfigs)
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+
+		for ctx.Err() == nil {
+			scrapeConfigs, err := puppetDBClient.GetScrapeConfigs(ctx, &cfg.PrometheusSD)
 			if err != nil {
-				log.Errorf("Failed to write output: %s", err)
+				log.Errorf("Failed to generate scrape_configs: %s", err)
+			} else {
+				err = o.Write(ctx, scrapeConfigs)
+				if err != nil {
+					log.Errorf("Failed to write output: %s", err)
+				}
+			}
+
+			log.Infof("Sleeping for %v", cfg.Sleep)
+
+			select {
+			case <-time.After(cfg.Sleep):
+			case <-ctx.Done():
 			}
 		}
 
-		log.Infof("Sleeping for %v", cfg.Sleep)
-		time.Sleep(cfg.Sleep)
-	}
+		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+
+		err := o.Close(ctx)
+		if err != nil {
+			log.Errorf("Failed to close output: %s", err)
+		}
+	}()
+
+	<-sigChan
 }

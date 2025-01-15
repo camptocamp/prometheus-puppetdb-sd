@@ -10,7 +10,8 @@ import (
 
 // Output is an abstraction to the different output types
 type Output interface {
-	WriteOutput(ctx context.Context, scrapeConfigs []*types.ScrapeConfig) (err error)
+	Write(ctx context.Context, scrapeConfigs []*types.ScrapeConfig) (err error)
+	Close(ctx context.Context) (err error)
 }
 
 // Setup returns an output type

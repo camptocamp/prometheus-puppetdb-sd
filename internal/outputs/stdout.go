@@ -20,8 +20,8 @@ func setupStdoutOutput(cfg *config.OutputConfig) (*StdoutOutput, error) {
 	}, nil
 }
 
-// WriteOutput writes Prometheus configuration to stdout
-func (o *StdoutOutput) WriteOutput(ctx context.Context, scrapeConfigs []*types.ScrapeConfig) (err error) {
+// Write writes Prometheus configuration to stdout
+func (o *StdoutOutput) Write(ctx context.Context, scrapeConfigs []*types.ScrapeConfig) (err error) {
 	var c []byte
 
 	switch o.format {
@@ -47,5 +47,10 @@ func (o *StdoutOutput) WriteOutput(ctx context.Context, scrapeConfigs []*types.S
 		return
 	}
 
+	return
+}
+
+// Close does nothing
+func (o *StdoutOutput) Close(_ context.Context) (err error) {
 	return
 }

@@ -36,8 +36,8 @@ func setupFileOutput(cfg *config.OutputConfig) (*FileOutput, error) {
 	}, err
 }
 
-// WriteOutput writes Prometheus configuration to files
-func (o *FileOutput) WriteOutput(ctx context.Context, scrapeConfigs []*types.ScrapeConfig) (err error) {
+// Write writes Prometheus configuration to files
+func (o *FileOutput) Write(ctx context.Context, scrapeConfigs []*types.ScrapeConfig) (err error) {
 	var c []byte
 	var mc []byte
 
@@ -136,6 +136,29 @@ func writeFile(path string, content []byte) (err error) {
 	err = os.Rename(tmpPath, path)
 	if err != nil {
 		return
+	}
+
+	return
+}
+
+// Close removes the files containing Prometheus configuration
+func (o *FileOutput) Close(_ context.Context) (err error) {
+	switch o.format {
+	case config.ScrapeConfigs, config.MergedStaticConfigs:
+		path := fmt.Sprintf("%s/%s", o.directory, o.filename)
+
+		err = os.Remove(path)
+		if err != nil {
+			return
+		}
+
+	case config.StaticConfigs:
+		for path := range o.state.oldPaths {
+			err = os.Remove(path)
+			if err != nil {
+				return
+			}
+		}
 	}
 
 	return

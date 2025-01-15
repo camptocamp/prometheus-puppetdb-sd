@@ -51,7 +51,7 @@ func (o *FileOutput) testFileWriteOutput(t *testing.T) {
 	oldPaths := map[string]struct{}{}
 
 	for i := range scrapeConfigs {
-		err = o.WriteOutput(ctx, scrapeConfigs[i])
+		err = o.Write(ctx, scrapeConfigs[i])
 		if err != nil {
 			assert.FailNow(t, "Failed to write output", err.Error())
 		}
@@ -101,6 +101,20 @@ func (o *FileOutput) testFileWriteOutput(t *testing.T) {
 
 			oldPaths = paths
 		}
+	}
+
+	err = o.Close(ctx)
+	if err != nil {
+		assert.FailNow(t, "Failed to close output", err.Error())
+	}
+
+	entries, err := os.ReadDir(directory)
+	if err != nil {
+		assert.FailNow(t, "Failed to read output directory", err.Error())
+	}
+
+	if len(entries) != 0 {
+		assert.FailNow(t, "Unexpected files in output directory", entries)
 	}
 }
 

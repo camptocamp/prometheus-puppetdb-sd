@@ -1,6 +1,7 @@
 package puppetdb
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"io"
@@ -263,7 +264,7 @@ func TestGetResources(t *testing.T) {
 		assert.FailNow(t, "Failed to create PuppetDB client", err.Error())
 	}
 
-	result, err := client.getResources()
+	result, err := client.getResources(context.Background())
 	if err != nil {
 		assert.FailNow(t, "Failed to get Puppet resources", err.Error())
 	}
@@ -344,7 +345,7 @@ func TestGetScrapeConfigs(t *testing.T) {
 		assert.FailNow(t, "Failed to create PuppetDB client", err.Error())
 	}
 
-	result, err := client.GetScrapeConfigs(&config.PrometheusSDConfig{})
+	result, err := client.GetScrapeConfigs(context.Background(), &config.PrometheusSDConfig{})
 	if err != nil {
 		assert.FailNow(t, "Failed to get Prometheus scrape configurations", err.Error())
 	}

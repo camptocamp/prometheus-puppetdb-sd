@@ -30,7 +30,7 @@ func (o *StdoutOutput) testStdoutWriteOutput(t *testing.T) {
 
 		c := make(chan error)
 		go func() {
-			err := o.WriteOutput(ctx, scrapeConfigs[i])
+			err := o.Write(ctx, scrapeConfigs[i])
 			w.Close()
 			c <- err
 		}()
@@ -50,6 +50,11 @@ func (o *StdoutOutput) testStdoutWriteOutput(t *testing.T) {
 		expectedOutput := expectedOutputs[i][o.format].(string)
 
 		assert.Equal(t, strings.TrimSpace(expectedOutput), strings.TrimSpace(output))
+	}
+
+	err := o.Close(ctx)
+	if err != nil {
+		assert.FailNow(t, "Failed to close output", err.Error())
 	}
 
 	os.Stdout = oldStdout

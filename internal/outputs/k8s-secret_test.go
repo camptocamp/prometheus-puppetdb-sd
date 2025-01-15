@@ -7,6 +7,7 @@ import (
 
 	"github.com/camptocamp/prometheus-puppetdb-sd/internal/config"
 	"github.com/stretchr/testify/assert"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	testclient "k8s.io/client-go/kubernetes/fake"
 )
@@ -28,7 +29,7 @@ func (o *K8sSecretOutput) testK8sSecretWriteOutput(t *testing.T) {
 	oldKeys := map[string]struct{}{}
 
 	for i := range scrapeConfigs {
-		err := o.WriteOutput(ctx, scrapeConfigs[i])
+		err := o.Write(ctx, scrapeConfigs[i])
 		if err != nil {
 			assert.FailNow(t, "Failed to write output", err.Error())
 		}
@@ -68,6 +69,19 @@ func (o *K8sSecretOutput) testK8sSecretWriteOutput(t *testing.T) {
 			}
 
 			oldKeys = keys
+		}
+
+		err = o.Close(ctx)
+		if err != nil {
+			assert.FailNow(t, "Failed to close output", err.Error())
+		}
+
+		secret, err = o.k8sClient.CoreV1().Secrets(o.namespace).Get(ctx, o.secretName, metav1.GetOptions{})
+		if err == nil {
+			assert.FailNow(t, "Secret has not been deleted")
+		}
+		if !errors.IsNotFound(err) {
+			assert.FailNow(t, "Unexpected error", err.Error())
 		}
 	}
 }
