@@ -42,10 +42,11 @@ type PrometheusSDConfig struct {
 
 // OutputConfig describes output configuration
 type OutputConfig struct {
-	Method    OutputMethod          `short:"o" long:"method" description:"Output method." choice:"stdout" choice:"file" choice:"k8s-secret" env:"OUTPUT_METHOD" default:"stdout"`
-	Format    OutputFormat          `long:"format" description:"Output format." choice:"scrape-configs" choice:"static-configs" choice:"merged-static-configs" env:"OUTPUT_FORMAT" default:"scrape-configs"`
+	Method    OutputMethod          `short:"o" long:"method" description:"Output method." choice:"stdout" choice:"file" choice:"http" choice:"k8s-secret" env:"OUTPUT_METHOD" default:"stdout"`
+	Format    OutputFormat          `long:"format" description:"Output format (irrelevant for HTTP output)." choice:"scrape-configs" choice:"static-configs" choice:"merged-static-configs" env:"OUTPUT_FORMAT" default:"scrape-configs"`
 	Stdout    StdoutOutputConfig    `group:"Stdout Output Configuration" namespace:"stdout"`
 	File      FileOutputConfig      `group:"File Output Configuration" namespace:"file"`
+	Http      HttpOutputConfig      `group:"HTTP Output Configuration" namespace:"http"`
 	K8sSecret K8sSecretOutputConfig `group:"Kubernetes Secret Output Configuration" namespace:"k8s-secret"`
 }
 
@@ -65,6 +66,11 @@ type FileOutputConfig struct {
 	Directory       string `long:"directory" description:"Output directory." env:"OUTPUT_DIRECTORY" default:"/etc/prometheus/puppetdb-sd"`
 }
 
+// HttpOutputConfig describes HTTP output configuration
+type HttpOutputConfig struct {
+	Port int `long:"port" description:"HTTP server port." default:"8080"`
+}
+
 // K8sSecretOutputConfig describes Kubernetes secret output configuration
 type K8sSecretOutputConfig struct {
 	SecretName            string            `long:"secret-name" description:"Kubernetes secret name." env:"OUTPUT_K8S_SECRET_NAME"`
@@ -81,6 +87,8 @@ const (
 	Stdout OutputMethod = "stdout"
 	// File output method stores Prometheus configuration into files
 	File OutputMethod = "file"
+	// HTTP output method serves Prometheus configuration through an HTTP server
+	Http OutputMethod = "http"
 	// K8sSecret output method stores Prometheus configuration into Kubernetes secret
 	K8sSecret OutputMethod = "k8s-secret"
 

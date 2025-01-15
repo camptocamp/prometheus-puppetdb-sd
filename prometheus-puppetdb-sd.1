@@ -1,4 +1,4 @@
-.TH prometheus-puppetdb-sd 1 "26 October 2023"
+.TH prometheus-puppetdb-sd 1 "15 January 2025"
 .SH NAME
 prometheus-puppetdb-sd \- PuppetDB based service discovery for Prometheus
 .SH SYNOPSIS
@@ -45,7 +45,7 @@ Prometheus target scraping proxy URL.
 Output method.
 .TP
 \fB\fB\-\-output.format\fR <default: \fI"scrape-configs"\fR>\fP
-Output format.
+Output format (irrelevant for HTTP output).
 .SS File Output Configuration
 .TP
 \fB\fB\-f\fR, \fB\-\-output.file.filename\fR <default: \fI"puppetdb-sd.yml"\fR>\fP
@@ -56,6 +56,10 @@ Output filename pattern ('*' is the placeholder).
 .TP
 \fB\fB\-\-output.file.directory\fR <default: \fI"/etc/prometheus/puppetdb-sd"\fR>\fP
 Output directory.
+.SS HTTP Output Configuration
+.TP
+\fB\fB\-\-output.http.port\fR <default: \fI"8080"\fR>\fP
+HTTP server port.
 .SS Kubernetes Secret Output Configuration
 .TP
 \fB\fB\-\-output.k8s-secret.secret-name\fR <default: \fI$OUTPUT_K8S_SECRET_NAME\fR>\fP
